@@ -45,23 +45,24 @@ Una vez logueado como Admin, puedes crear otros usuarios (Vendedores, Contadores
   ```json
   {
     "username": "admin",
-    "password": "password"
+    "password": "12345"
   }
   ```
-  *Usar el token Bearer en los headers para las siguientes peticiones.*
+  *Nota: Copiar el token devuelto y usarlo en el botón "Authorize" de Swagger (Bearer <token>).*
 
 ### 2. Gestión de Usuarios (Rol: ADMIN)
 - **GET** `/api/usuarios`: Listar usuarios.
-- **POST** `/api/usuarios`: Crear usuario.
+- **POST** `/api/usuarios`: Crear usuario (Ej. Vendedor).
   ```json
   {
-    "nombre": "Nuevo Vendedor",
-    "correo": "vendedor@mail.com",
-    "username": "vendedor2",
+    "nombre": "Juan Vendedor",
+    "correo": "juan@mail.com",
+    "username": "vendedor1",
     "password": "123",
     "tipoUsuario": { "id": 2 }
   }
   ```
+  *(Roles IDs: 1=ADMIN, 2=VENDEDOR, 3=CONTADOR)*
 
 ### 3. Reportes
 - **Clientes (PDF)**: `GET /api/reportes/clientes/pdf` (Roles: ADMIN, CONTADOR)
@@ -69,8 +70,10 @@ Una vez logueado como Admin, puedes crear otros usuarios (Vendedores, Contadores
 - **Productos (Excel)**: `GET /api/reportes/productos/excel` (Roles: ADMIN, CONTADOR)
 
 ### 4. Simulación SRI (Rol: VENDEDOR, ADMIN)
-- **POST** `/api/facturas/enviar-sri/{id}`:
-  Simula el envío de una factura existente. Cambia el estado a "Autorizada" y genera una fecha de autorización.
+1.  **Crear Factura**: `POST /api/facturas` (Guardar el ID retornado).
+2.  **Enviar a SRI**: `POST /api/facturas/enviar-sri/{id}`.
+    *   Este endpoint validad la factura, simula la firma electrónica (bypass si no hay archivo p12) y cambia el estado a **AUTORIZADO**.
+    *   Devuelve fecha y mensaje de confirmación.
 
 ## Estructura del Proyecto
 - **Controladores**: Endpoints de la API.
