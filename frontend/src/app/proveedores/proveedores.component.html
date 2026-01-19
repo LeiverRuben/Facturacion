@@ -1,0 +1,131 @@
+<div class="page-header slide-in-bottom">
+    <div>
+        <h1 class="page-title"><i class='bx bxs-truck'></i> Gestión de Proveedores</h1>
+        <p class="page-subtitle">Administra tus proveedores para el control de compras.</p>
+    </div>
+    <button class="btn-action btn-primary" (click)="toggleFormulario()">
+        <i class='bx' [ngClass]="mostrarFormulario ? 'bx-x' : 'bx-plus'"></i>
+        {{ mostrarFormulario ? 'Cerrar' : 'Nuevo Proveedor' }}
+    </button>
+</div>
+
+<!-- Notificaciones -->
+<div *ngIf="mensaje" class="alert-premium slide-in-top"
+    [ngClass]="{'alert-success': tipoMensaje === 'success', 'alert-danger': tipoMensaje === 'error'}">
+    <i class='bx' [ngClass]="tipoMensaje === 'success' ? 'bx-check-circle' : 'bx-error'"></i>
+    {{ mensaje }}
+</div>
+
+<div class="form-grid">
+    <!-- Tarjeta de Formulario -->
+    <div class="card-premium slide-in-bottom" *ngIf="mostrarFormulario" style="height: fit-content;">
+        <div class="card-header">
+            <h3 class="card-title">{{ editando ? 'Editar Proveedor' : 'Nuevo Proveedor' }}</h3>
+        </div>
+        <div class="card-body">
+            <div class="form-group">
+                <label class="form-label">Razón Social *</label>
+                <div class="input-icon-wrapper">
+                    <i class='bx bx-building'></i>
+                    <input type="text" class="form-control" [(ngModel)]="nuevoProveedor.razonSocial"
+                        placeholder="Nombre de la empresa">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">RUC/Identificación *</label>
+                <div class="input-icon-wrapper">
+                    <i class='bx bx-id-card'></i>
+                    <input type="text" class="form-control" [(ngModel)]="nuevoProveedor.ruc"
+                        placeholder="Ej: 1790011223001" maxlength="13">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <div class="input-icon-wrapper">
+                    <i class='bx bx-envelope'></i>
+                    <input type="email" class="form-control" [(ngModel)]="nuevoProveedor.email"
+                        placeholder="contacto@proveedor.com">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Teléfono</label>
+                <div class="input-icon-wrapper">
+                    <i class='bx bx-phone'></i>
+                    <input type="text" class="form-control" [(ngModel)]="nuevoProveedor.telefono"
+                        placeholder="0991234567">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Dirección</label>
+                <div class="input-icon-wrapper">
+                    <i class='bx bx-map'></i>
+                    <input type="text" class="form-control" [(ngModel)]="nuevoProveedor.direccion"
+                        placeholder="Dirección completa">
+                </div>
+            </div>
+
+            <div class="button-group mt-3">
+                <button class="btn-action btn-secondary" (click)="cancelarEdicion()">Cancelar</button>
+                <button class="btn-action btn-primary" (click)="guardarProveedor()">
+                    <i class='bx bx-save'></i> {{ editando ? 'Actualizar' : 'Guardar' }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Proveedores -->
+    <div class="card-premium slide-in-bottom" [style.grid-column]="mostrarFormulario ? 'span 1' : '1 / -1'">
+        <div class="card-header">
+            <h3 class="card-title">Listado de Proveedores</h3>
+        </div>
+        <div class="table-container">
+            <table class="table-modern">
+                <thead>
+                    <tr>
+                        <th>Razón Social</th>
+                        <th>RUC</th>
+                        <th>Contacto</th>
+                        <th>Dirección</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let p of proveedores">
+                        <td class="fw-bold">{{ p.razonSocial }}</td>
+                        <td><span class="badge badge-info">{{ p.ruc }}</span></td>
+                        <td>
+                            <div class="d-flex flex-column">
+                                <small *ngIf="p.email"><i class='bx bx-envelope'></i> {{ p.email }}</small>
+                                <small *ngIf="p.telefono"><i class='bx bx-phone'></i> {{ p.telefono }}</small>
+                            </div>
+                        </td>
+                        <td>{{ p.direccion || 'N/A' }}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-icon text-primary" (click)="editarProveedor(p)" title="Editar">
+                                    <i class='bx bx-edit'></i>
+                                </button>
+                                <button class="btn-icon text-danger" (click)="eliminarProveedor(p.id!)"
+                                    title="Eliminar">
+                                    <i class='bx bx-trash'></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr *ngIf="proveedores.length === 0">
+                        <td colspan="5" class="text-center py-4">
+                            <div class="empty-state">
+                                <i class='bx bx-truck text-muted' style="font-size: 3rem;"></i>
+                                <p class="text-muted mt-2">No hay proveedores registrados</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

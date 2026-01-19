@@ -1,0 +1,247 @@
+<div class="caja-container slide-in-bottom">
+
+    <header class="page-header mb-4">
+        <h2 class="title" style="color:var(--primary-color);">Control de Caja</h2>
+        <p class="subtitle text-muted">Gestiona tu turno y movimientos en tiempo real.</p>
+    </header>
+
+    <!-- Alertas -->
+    <div *ngIf="mensaje" class="alert mb-3" [ngClass]="{
+        'alert-success': tipoMensaje === 'success',
+        'alert-error': tipoMensaje === 'error',
+        'alert-info': tipoMensaje === 'info'
+    }">
+        {{ mensaje }}
+    </div>
+
+    <!-- MODO 1: CAJA CERRADA (Formulario de Apertura) -->
+    <div class="card-premium" *ngIf="!sesionActiva">
+        <div class="text-center mb-4">
+            <div
+                style="background:#f1f5f9; width:80px; height:80px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto;">
+                <i class='bx bx-lock-open-alt' style="font-size: 3rem; color: #64748b;"></i>
+            </div>
+            <h3 class="mt-3 fw-bold">Apertura de Caja</h3>
+            <p class="text-muted">Inicia tu turno ingresando el dinero base.</p>
+        </div>
+
+        <div class="form-group" style="max-width:300px; margin:0 auto;">
+            <label class="form-label text-center w-100">Monto Inicial ($)</label>
+            <input type="number" [(ngModel)]="montoInicial" class="form-control-lg text-center" placeholder="0.00"
+                min="0">
+        </div>
+
+        <div class="mt-4 text-center">
+            <button (click)="abrirCaja()" class="btn-premium btn-primary" style="max-width:300px;">
+                <i class='bx bx-play-circle'></i> Iniciar Turno
+            </button>
+        </div>
+    </div>
+
+    <!-- MODO 2: CAJA ABIERTA (Dashboard) -->
+    <div *ngIf="sesionActiva && resumen" class="dashboard-caja">
+
+        <!-- Tarjetas de Resumen -->
+        <div class="row g-3">
+            <!-- Saldo Actual -->
+            <div class="col-md-4">
+                <div class="card-stat bg-white p-4 rounded-3 shadow-sm border text-center h-100">
+                    <p class="text-muted mb-1 text-uppercase fw-bold small">Saldo Actual en Caja</p>
+                    <h2 class="balance-amount fw-bold text-success">{{ resumen.saldoActual | currency:'USD' }}</h2>
+                    <p class="text-muted small mb-0"><i class='bx bx-check-circle'></i> Balance calculado</p>
+                </div>
+            </div>
+
+            <!-- Ventas Hoy -->
+            <div class="col-md-4">
+                <div class="card-stat bg-white p-4 rounded-3 shadow-sm border text-center h-100">
+                    <p class="text-muted mb-1 text-uppercase fw-bold small">Ventas del Turno</p>
+                    <h3 class="fw-bold text-primary">{{ resumen.totalVentas | currency:'USD' }}</h3>
+                    <p class="text-muted small mb-0">Facturado hoy</p>
+                </div>
+            </div>
+
+            <!-- Movimientos -->
+            <div class="col-md-4">
+                <div class="card-stat bg-white p-4 rounded-3 shadow-sm border text-center h-100">
+                    <p class="text-muted mb-1 text-uppercase fw-bold small">Flujo de Efectivo</p>
+                    <div class="d-flex justify-content-between px-3">
+                        <span class="text-success"><i class='bx bx-up-arrow-alt'></i> {{ resumen.totalIngresos |
+                            currency:'USD' }}</span>
+                        <span class="text-danger"><i class='bx bx-down-arrow-alt'></i> {{ resumen.totalEgresos |
+                            currency:'USD' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones Rápidas -->
+        <div class="actions-bar d-flex gap-3 justify-content-center my-4">
+            <button class="btn-action-lg btn-outline-success" (click)="toggleMovimientoForm('INGRESO')">
+                <i class='bx bx-plus-circle'></i> Ingresar Dinero
+            </button>
+            <button class="btn-action-lg btn-outline-danger" (click)="toggleMovimientoForm('EGRESO')">
+                <i class='bx bx-minus-circle'></i> Retirar Dinero
+            </button>
+        </div>
+
+        <!-- Formulario de Movimiento (Modal Inline) -->
+        <div *ngIf="showMovimientoForm" class="card-premium p-4 mb-4 border-warning slide-in-top"
+            style="max-width:600px; margin:0 auto; border-left:5px solid #f59e0b;">
+            <h4 class="mb-3">{{ movimientoData.tipo === 'INGRESO' ? 'Registrar Ingreso Extra' : 'Registrar Retiro/Gasto'
+                }}</h4>
+
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <label class="form-label">Monto ($)</label>
+                    <input type="number" [(ngModel)]="movimientoData.monto" class="form-control" placeholder="0.00">
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label">Descripción / Motivo</label>
+                    <input type="text" [(ngModel)]="movimientoData.descripcion" class="form-control"
+                        placeholder="Ej: Compra de clips, Pago de agua...">
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <button class="btn btn-light" (click)="showMovimientoForm = false">Cancelar</button>
+                <button class="btn btn-primary" (click)="registrarMovimiento()">Guardar Movimiento</button>
+            </div>
+        </div>
+
+        <!-- Tabla de Movimientos -->
+        <div class="card-premium p-0 mb-4 overflow-hidden">
+            <div class="p-3 bg-light border-bottom">
+                <h5 class="m-0 fw-bold">Historial de Movimientos</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Hora</th>
+                            <th>Tipo</th>
+                            <th>Descripción</th>
+                            <th class="text-end">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let mov of resumen.movimientos">
+                            <td>{{ mov.fecha | date:'shortTime' }}</td>
+                            <td>
+                                <span class="badge"
+                                    [ngClass]="{'bg-success': mov.tipo === 'INGRESO', 'bg-danger': mov.tipo === 'EGRESO'}">
+                                    {{ mov.tipo }}
+                                </span>
+                            </td>
+                            <td>{{ mov.descripcion }}</td>
+                            <td class="text-end fw-bold">{{ mov.monto | currency:'USD' }}</td>
+                        </tr>
+                        <tr *ngIf="!resumen.movimientos?.length">
+                            <td colspan="4" class="text-center py-3 text-muted">No hay movimientos registrados aún.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Cierre de Caja -->
+        <div class="card-premium p-4 bg-slate-50 border text-center mt-5">
+            <h4 class="text-danger mb-3"><i class='bx bx-lock-alt'></i> Cierre de Turno</h4>
+            <p class="mb-3">El sistema calcula que deberías tener: <strong>{{ resumen.saldoActual | currency:'USD'
+                    }}</strong></p>
+
+            <div class="form-group mx-auto" style="max-width:300px;">
+                <label class="form-label">Dinero Contado Realmente ($)</label>
+                <input type="number" [(ngModel)]="montoCierre" class="form-control-lg text-center bg-white"
+                    placeholder="0.00">
+            </div>
+
+            <div *ngIf="montoCierre > 0" class="mt-2 mb-3">
+                <small
+                    [ngClass]="{'text-success': (montoCierre - resumen.saldoActual) >= 0, 'text-danger': (montoCierre - resumen.saldoActual) < 0}">
+                    Diferencia: {{ (montoCierre - resumen.saldoActual) | currency:'USD' }}
+                </small>
+            </div>
+
+            <button (click)="cerrarCaja()" class="btn-premium btn-danger mt-2" style="max-width:300px;">
+                Confirmar Cierre y Salir
+            </button>
+        </div>
+
+    </div>
+
+    <!-- SECCIÓN: HISTORIAL DE CIERRES (CON BUSCADOR Y PAGINACIÓN) -->
+    <div class="mt-5 pt-4 border-top">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+            <div>
+                <h3 class="title mb-0" style="font-size:1.5rem; color:#64748b;">Historial de Cierres</h3>
+                <p class="text-muted small mb-0">Registro de todas las sesiones pasadas</p>
+            </div>
+
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-white px-3 py-2 rounded-3 border shadow-sm d-flex align-items-center gap-2">
+                    <span class="text-muted small fw-bold text-uppercase">Total Histórico Ventas:</span>
+                    <span class="text-primary fw-bold">{{ totalAcumuladoVentas | currency:'USD' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between mb-3">
+            <div class="position-relative" style="width: 300px;">
+                <input type="text" [(ngModel)]="searchText" (input)="page=1" class="form-control ps-5"
+                    placeholder="Buscar fecha, usuario...">
+                <i class='bx bx-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted'></i>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-outline-secondary btn-sm" (click)="prevPage()" [disabled]="page === 1">
+                    <i class='bx bx-chevron-left'></i>
+                </button>
+                <span class="fw-bold text-muted small">Pág {{page}} / {{totalPages}}</span>
+                <button class="btn btn-outline-secondary btn-sm" (click)="nextPage()" [disabled]="page >= totalPages">
+                    <i class='bx bx-chevron-right'></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="card-premium p-0 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Fecha Apertura</th>
+                            <th>Fecha Cierre</th>
+                            <th>Usuario</th>
+                            <th class="text-end">Monto Inicial</th>
+                            <th class="text-end">Total Ventas</th>
+                            <th class="text-end">Monto Final</th>
+                            <th class="text-center">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let sesion of filteredHistorial">
+                            <td>{{ sesion.fechaApertura | date:'dd/MM/yyyy HH:mm' }}</td>
+                            <td>{{ sesion.fechaCierre ? (sesion.fechaCierre | date:'dd/MM/yyyy HH:mm') : '-' }}</td>
+                            <td>{{ sesion.usuario?.nombre || sesion.usuario?.username }}</td>
+                            <td class="text-end">{{ sesion.montoInicial | currency:'USD' }}</td>
+                            <td class="text-end fw-bold">{{ sesion.totalVentasEfectivo | currency:'USD' }}</td>
+                            <td class="text-end">{{ sesion.montoFinal ? (sesion.montoFinal | currency:'USD') : '-' }}
+                            </td>
+                            <td class="text-center">
+                                <span class="badge"
+                                    [ngClass]="{'bg-success': sesion.estado === 'ABIERTA', 'bg-secondary': sesion.estado === 'CERRADA'}">
+                                    {{ sesion.estado }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr *ngIf="filteredHistorial.length === 0">
+                            <td colspan="7" class="text-center py-4 text-muted">Originalmente no hay datos o la búsqueda
+                                no arrojó resultados.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>

@@ -1,0 +1,38 @@
+<nav class="navbar navbar-expand-lg navbar-premium fixed-top">
+  <div class="container">
+    <a class="navbar-brand" routerLink="/">
+      <i class='bx bxs-component text-primary'></i> Mi Empresa
+    </a>
+
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <i class='bx bx-menu fs-1 text-dark'></i>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto align-items-center gap-3">
+
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/" routerLinkActive="active"
+            [routerLinkActiveOptions]="{exact: true}">Inicio</a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/catalogo" routerLinkActive="active">Catálogo</a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/contacto" routerLinkActive="active">Contáctanos</a>
+        </li>
+
+        <!-- Botón Login -->
+        <li class="nav-item ms-lg-2">
+          <a class="nav-link btn-login-nav" routerLink="/login">
+            Iniciar sesión
+          </a>
+        </li>
+
+      </ul>
+    </div>
+  </div>
+</nav>
+<div style="height: 80px;"></div> <!-- Spacer -->

@@ -1,0 +1,58 @@
+<div class="split-screen-container">
+
+  <!-- Left Side: Brand / Visual -->
+  <div class="brand-panel">
+    <div class="brand-content">
+      <h1>Facturación</h1>
+      <p>Gestiona tu negocio con elegancia y control total.</p>
+      <div class="brand-decoration"></div>
+    </div>
+  </div>
+
+  <!-- Right Side: Login Form -->
+  <div class="form-panel">
+    <div class="login-card-v2">
+      <div class="login-header text-start">
+        <h2 class="fw-bold text-dark">Bienvenido de nuevo</h2>
+        <p class="text-muted">Por favor ingresa tus datos.</p>
+      </div>
+
+      <form (ngSubmit)="onLogin()" class="mt-4">
+
+        <div class="mb-4">
+          <label class="form-label fw-medium text-secondary small">NOMBRE DE USUARIO</label>
+          <div class="input-group-modern">
+            <i class='bx bx-user'></i>
+            <input type="text" [(ngModel)]="username" name="username" placeholder="Ej. admin" required
+              autocomplete="off">
+          </div>
+        </div>
+
+        <div class="mb-5">
+          <label class="form-label fw-medium text-secondary small">CONTRASEÑA</label>
+          <div class="input-group-modern">
+            <i class='bx bx-lock-alt'></i>
+            <input type="password" [(ngModel)]="password" name="password" placeholder="••••••••" required>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-premium" [disabled]="!username || !password">
+          Iniciar Sesión <i class='bx bx-right-arrow-alt'></i>
+        </button>
+
+        <div class="login-footer">
+          <a routerLink="/catalogo" class="btn-link-secondary">
+            <i class='bx bx-store-alt'></i> Ver Catálogo de Productos
+          </a>
+        </div>
+
+      </form>
+
+      <div class="text-center mt-4">
+        <span class="text-muted small">¿Problemas para ingresar? <a href="#"
+            class="text-primary fw-bold text-decoration-none">Contacta soporte</a></span>
+      </div>
+    </div>
+  </div>
+
+</div>

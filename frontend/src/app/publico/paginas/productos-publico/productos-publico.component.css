@@ -1,0 +1,91 @@
+/* Hero Section */
+.hero-section {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    /* Slate Theme (Neutral) */
+    padding: 5rem 0;
+    color: white;
+    margin-bottom: 4rem;
+    border-radius: 0 0 50% 50% / 4rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+/* Category Title */
+.category-title {
+    color: #334155;
+    font-weight: 700;
+    font-size: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e2e8f0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Card Styles */
+.product-card {
+    border: none;
+    border-radius: 16px;
+    background: white;
+    transition: all 0.4s ease;
+    overflow: hidden;
+    position: relative;
+}
+
+.product-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.15) !important;
+}
+
+.icon-container {
+    height: 100px;
+    width: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+    border-radius: 50%;
+    margin: 0 auto 1.5rem;
+    transition: transform 0.4s ease;
+}
+
+.product-card:hover .icon-container {
+    transform: scale(1.1);
+    background: #e2e8f0;
+}
+
+.product-card .bx {
+    font-size: 3rem;
+    color: #475569;
+}
+
+/* Typography & Badges */
+.card-title {
+    color: #1e293b;
+    font-weight: 700;
+}
+
+.price-tag {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.stock-badge {
+    background: #f1f5f9;
+    color: #64748b;
+    font-weight: 600;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+}

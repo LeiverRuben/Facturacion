@@ -1,0 +1,350 @@
+<div class="page-header slide-in-bottom">
+    <div>
+        <h1 class="page-title"><i class='bx bxs-cart-download'></i> Ingreso de Compras</h1>
+        <p class="page-subtitle">Registra falturas de proveedores y alimenta tu inventario.</p>
+    </div>
+</div>
+
+<!-- Notificaciones -->
+<div *ngIf="mensaje" class="alert-premium slide-in-top"
+    [ngClass]="{'alert-success': tipoMensaje === 'success', 'alert-danger': tipoMensaje === 'error'}">
+    <i class='bx' [ngClass]="tipoMensaje === 'success' ? 'bx-check-circle' : 'bx-error'"></i>
+    {{ mensaje }}
+</div>
+
+<!-- VISTA: LISTADO DE COMPRAS -->
+<div *ngIf="!mostrarFormulario" class="slide-in-bottom">
+    <div class="card-premium">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="card-title">Historial de Compras</h3>
+            <div class="d-flex gap-2">
+                <div class="input-icon-wrapper" style="width: 250px;">
+                    <i class='bx bx-search'></i>
+                    <input type="text" class="form-control" placeholder="Buscar por proveedor..." [(ngModel)]="filtro">
+                </div>
+                <button class="btn-action btn-primary" (click)="toggleVista()">
+                    <i class='bx bx-plus'></i> Nueva Compra
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-container">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Nro. Comprobante</th>
+                            <th>Proveedor</th>
+                            <th>Estado</th>
+                            <th class="text-right">Total</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let c of comprasFiltradas">
+                            <td>{{ c.fechaEmision | date:'dd/MM/yyyy' }}</td>
+                            <td><span class="badge-pill badge-neutral">{{ c.numeroComprobante }}</span></td>
+                            <td class="fw-bold">{{ c.proveedor?.razonSocial || 'N/A' }}</td>
+                            <td>
+                                <span class="badge-pill"
+                                    [ngClass]="c.estado === 'RECIBIDA' ? 'badge-success' : 'badge-warning'">
+                                    {{ c.estado }}
+                                </span>
+                            </td>
+                            <td class="text-right fw-bold">{{ c.total | currency:'USD' }}</td>
+                            <td class="text-center">
+                                <button class="btn-sm btn-outline-secondary" (click)="abrirModalRetencion(c)"
+                                    title="Generar Retención">
+                                    <i class='bx bx-receipt'></i> Retención
+                                </button>
+                            </td>
+                        </tr>
+                        <tr *ngIf="comprasFiltradas.length === 0">
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class='bx bx-notepad fs-1 mb-2'></i>
+                                <p>No hay compras registradas aún.</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- VISTA: FORMULARIO NUEVA COMPRA -->
+<div *ngIf="mostrarFormulario" class="form-grid slide-in-bottom" style="grid-template-columns: 2fr 1fr;">
+
+    <!-- Sección Izquierda: Formulario y Detalle -->
+    <div class="d-flex flex-column gap-3">
+
+        <!-- Botón Regresar -->
+        <div>
+            <button class="btn-link-secondary mb-2" (click)="toggleVista()">
+                <i class='bx bx-arrow-back'></i> Volver al listado
+            </button>
+        </div>
+
+        <!-- Cabecera Compra -->
+        <div class="card-premium">
+            <div class="card-header">
+                <h3 class="card-title">Datos del Proveedor</h3>
+            </div>
+            <div class="card-body grid-2">
+
+                <div class="form-group">
+                    <label class="form-label">Proveedor *</label>
+                    <div class="input-icon-wrapper">
+                        <i class='bx bxs-truck'></i>
+                        <select class="form-control" [(ngModel)]="compra.proveedorId" style="padding-left: 2.8rem;">
+                            <option [ngValue]="null">Seleccione un Proveedor...</option>
+                            <option *ngFor="let p of proveedores" [value]="p.id">{{ p.razonSocial }} ({{ p.ruc }})
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Nro. Factura / Comprobante *</label>
+                    <div class="input-icon-wrapper">
+                        <i class='bx bx-hash'></i>
+                        <input type="text" class="form-control" [(ngModel)]="compra.numeroComprobante"
+                            placeholder="001-001-123456789">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Fecha Emisión</label>
+                    <input type="date" class="form-control" [(ngModel)]="compra.fechaEmision">
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Agregar Productos -->
+        <div class="card-premium">
+            <div class="card-header">
+                <h3 class="card-title">Agregar Productos al Stock</h3>
+            </div>
+            <div class="card-body">
+                <div class="item-grid">
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label class="form-label">Producto</label>
+                        <select class="form-control" [(ngModel)]="itemSeleccionado.productoId">
+                            <option [ngValue]="null">Buscar producto...</option>
+                            <option *ngFor="let prod of productos" [value]="prod.productoId">
+                                {{ prod.productoNombre }}
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Cant.</label>
+                        <input type="number" class="form-control text-center" [(ngModel)]="itemSeleccionado.cantidad"
+                            (keypress)="validateNumber($event)" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Costo ($)</label>
+                        <input type="number" class="form-control text-right"
+                            [(ngModel)]="itemSeleccionado.costoUnitario" (keypress)="validateNumber($event)" min="0"
+                            placeholder="0.00">
+                    </div>
+                    <div class="form-group d-flex align-items-end">
+                        <button class="btn-action btn-primary w-100 justify-content-center" (click)="agregarProducto()">
+                            <i class='bx bx-plus'></i> Agregar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla Detalle -->
+        <div class="card-premium">
+            <div class="table-container">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th class="text-center">Cant.</th>
+                            <th class="text-right">Costo Unit.</th>
+                            <th class="text-right">Subtotal</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let item of detalles; let i = index">
+                            <td>{{ item.productoNombre }}</td>
+                            <td class="text-center">{{ item.cantidad }}</td>
+                            <td class="text-right">{{ item.costoUnitario | currency:'USD' }}</td>
+                            <td class="text-right fw-bold">{{ item.subtotal | currency:'USD' }}</td>
+                            <td class="text-center">
+                                <button class="btn-icon text-danger" (click)="eliminarDetalle(i)">
+                                    <i class='bx bx-trash'></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr *ngIf="detalles.length === 0">
+                            <td colspan="5" class="text-center py-4 text-muted">
+                                No hay productos agregados a la compra
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Sección Derecha: Totales -->
+    <div class="d-flex flex-column gap-3">
+        <div class="card-premium sticky-top">
+            <div class="card-header">
+                <h3 class="card-title">Resumen</h3>
+            </div>
+            <div class="card-body">
+                <div class="summary-row">
+                    <span>Subtotal:</span>
+                    <span class="value">{{ subtotal | currency:'USD' }}</span>
+                </div>
+                <div class="summary-row">
+                    <span>IVA (15%):</span>
+                    <span class="value">{{ iva | currency:'USD' }}</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Total:</span>
+                    <span class="value">{{ total | currency:'USD' }}</span>
+                </div>
+
+                <div class="form-group mt-3">
+                    <label class="form-label">Observación</label>
+                    <textarea class="form-control" rows="2" [(ngModel)]="compra.observacion"></textarea>
+                </div>
+
+                <button class="btn-action btn-primary w-100 mt-4 py-3 justify-content-center" (click)="guardarCompra()"
+                    [disabled]="detalles.length === 0">
+                    <i class='bx bx-save'></i> REGISTRAR COMPRA
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- MODAL DE RETENCIÓN -->
+<div class="modal-backdrop-custom" *ngIf="showRetencionModal">
+    <div class="modal-content-custom slide-in-top">
+        <div class="modal-header-custom">
+            <h3>Generar Retención</h3>
+            <button class="btn-close-custom" (click)="showRetencionModal = false">&times;</button>
+        </div>
+        <div class="modal-body-custom">
+            <p class="text-muted mb-3">
+                Generando retención para compra:
+                <strong>{{ compraParaRetencion?.numeroComprobante }}</strong>
+            </p>
+
+            <div class="row g-2 align-items-end mb-3 p-3 bg-light rounded">
+                <div class="col-md-3">
+                    <label class="small fw-bold">Impuesto</label>
+                    <select class="form-control form-control-sm" [(ngModel)]="retencionItem.codigo">
+                        <option value="1">RENTA</option>
+                        <option value="2">IVA</option>
+                        <option value="6">ISD</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="small fw-bold">Cód. SRI</label>
+                    <input type="text" class="form-control form-control-sm" [(ngModel)]="retencionItem.codigoRetencion"
+                        placeholder="Ej: 312">
+                </div>
+                <div class="col-md-3">
+                    <label class="small fw-bold">Base Imp.</label>
+                    <input type="number" class="form-control form-control-sm" [(ngModel)]="retencionItem.baseImponible">
+                </div>
+                <div class="col-md-2">
+                    <label class="small fw-bold">% Ret.</label>
+                    <input type="number" class="form-control form-control-sm"
+                        [(ngModel)]="retencionItem.porcentajeRetener">
+                </div>
+                <div class="col-md-1">
+                    <button class="btn btn-sm btn-primary w-100" (click)="agregarDetalleRetencion()">
+                        <i class='bx bx-plus'></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabla de Detalles -->
+            <table class="table table-sm table-bordered">
+                <thead>
+                    <tr class="bg-light">
+                        <th>Tipo</th>
+                        <th>Cód.</th>
+                        <th class="text-end">Base</th>
+                        <th class="text-end">%</th>
+                        <th class="text-end">Retenido</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let det of detallesRetencion; let i = index">
+                        <td>{{ det.codigo === '1' ? 'RENTA' : (det.codigo === '2' ? 'IVA' : 'ISD') }}</td>
+                        <td>{{ det.codigoRetencion }}</td>
+                        <td class="text-end">{{ det.baseImponible | currency:'USD' }}</td>
+                        <td class="text-end">{{ det.porcentajeRetener }}%</td>
+                        <td class="text-end fw-bold">{{ (det.baseImponible * det.porcentajeRetener / 100) |
+                            currency:'USD' }}</td>
+                        <td class="text-center">
+                            <i class='bx bx-trash text-danger cursor-pointer' (click)="eliminarDetalleRetencion(i)"></i>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="modal-footer-custom">
+            <button class="btn btn-secondary" (click)="showRetencionModal = false">Cancelar</button>
+            <button class="btn btn-primary" (click)="generarRetencion()">Generar Comprobante</button>
+        </div>
+    </div>
+</div>
+
+<!-- ESTILOS INLINE (Mover a CSS luego si se desea) -->
+<style>
+    .modal-backdrop-custom {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1050;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-content-custom {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        width: 600px;
+        max-width: 90%;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header-custom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+
+    .modal-footer-custom {
+        border-top: 1px solid #eee;
+        padding-top: 15px;
+        margin-top: 15px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+</style>

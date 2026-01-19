@@ -1,0 +1,70 @@
+<div class="hero-home" style="padding: 4rem 0;">
+  <div class="container text-center">
+    <h1 class="display-title mb-2">Hablemos</h1>
+    <p class="hero-subtitle mx-auto" style="max-width: 600px;">
+      ¿Tienes alguna duda o propuesta? Estamos aquí para ayudarte. Completa el formulario y te responderemos a la
+      brevedad.
+    </p>
+  </div>
+</div>
+
+<div class="container pb-5" style="margin-top: -3rem; position: relative; z-index: 10;">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="card-body p-5">
+
+          <!-- Alerts -->
+          <div *ngIf="enviado" class="alert alert-success d-flex align-items-center rounded-3 mb-4">
+            <i class='bx bxs-check-circle fs-4 me-2'></i>
+            <div>¡Mensaje enviado correctamente! Nos pondremos en contacto pronto.</div>
+          </div>
+
+          <div *ngIf="error" class="alert alert-danger d-flex align-items-center rounded-3 mb-4">
+            <i class='bx bxs-error-circle fs-4 me-2'></i>
+            <div>{{ error }}</div>
+          </div>
+
+          <form [formGroup]="form" (ngSubmit)="enviar()" novalidate>
+
+            <div class="row g-4">
+              <div class="col-md-6">
+                <label class="form-label fw-bold text-muted small text-uppercase">Nombre Completo</label>
+                <input type="text" class="form-control form-control-lg bg-light border-0" formControlName="nombre"
+                  placeholder="Juan Pérez">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-bold text-muted small text-uppercase">Correo Electrónico</label>
+                <input type="email" class="form-control form-control-lg bg-light border-0" formControlName="email"
+                  placeholder="juan@ejemplo.com">
+              </div>
+
+              <div class="col-12">
+                <label class="form-label fw-bold text-muted small text-uppercase">Asunto</label>
+                <input type="text" class="form-control form-control-lg bg-light border-0" formControlName="asunto"
+                  placeholder="¿En qué podemos ayudarte?">
+              </div>
+
+              <div class="col-12">
+                <label class="form-label fw-bold text-muted small text-uppercase">Mensaje</label>
+                <textarea rows="5" class="form-control form-control-lg bg-light border-0" formControlName="mensaje"
+                  placeholder="Escribe tu mensaje aquí..."></textarea>
+              </div>
+
+              <div class="col-12 mt-4">
+                <button type="submit" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm"
+                  [disabled]="enviando">
+                  <span *ngIf="!enviando"><i class='bx bx-paper-plane'></i> Enviar Mensaje</span>
+                  <span *ngIf="enviando"><i class='bx bx-loader-alt bx-spin'></i> Eviando...</span>
+                </button>
+              </div>
+            </div>
+
+          </form>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

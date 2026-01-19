@@ -1,0 +1,71 @@
+<div class="hero-section text-center">
+    <div class="container">
+        <h1 class="display-4 fw-bold mb-3">Nuestros Productos</h1>
+        <p class="lead opacity-75 mx-auto" style="max-width: 600px;">
+            Calidad y variedad a tu alcance.
+        </p>
+    </div>
+</div>
+
+<div class="container pb-5" style="margin-top: -3rem;">
+
+    <!-- Spinner Carga -->
+    <div *ngIf="isLoading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+    </div>
+
+    <!-- Lista Categorizada -->
+    <div *ngFor="let cat of categorias">
+
+        <h3 class="category-title mb-4 mt-2">
+            <i class='bx bxs-category'></i> {{ cat.nombre }}
+        </h3>
+
+        <div class="row g-4 mb-5">
+            <div class="col-md-6 col-lg-4" *ngFor="let producto of cat.productos">
+                <div class="card h-100 shadow-sm product-card p-4">
+
+                    <div class="text-center">
+                        <div class="icon-container">
+                            <i class='bx bx-laptop'
+                                *ngIf="cat.nombre.includes('Tecnología') || cat.nombre.includes('Laptop')"></i>
+                            <i class='bx bx-baguette'
+                                *ngIf="cat.nombre.includes('Alimento') || cat.nombre.includes('Comida')"></i>
+                            <i class='bx bx-package'
+                                *ngIf="!cat.nombre.includes('Tecnología') && !cat.nombre.includes('Alimento')"></i>
+                        </div>
+                    </div>
+
+                    <div class="card-body text-center p-0">
+                        <h5 class="card-title fs-4 mb-1">{{ producto.productoNombre }}</h5>
+                        <p class="text-muted small mb-3">{{ producto.productoCodigo }}</p>
+
+                        <div class="d-flex justify-content-center gap-2 mb-3">
+                            <span class="stock-badge">
+                                <i class='bx bx-box'></i> {{ producto.productoStock }} unid.
+                            </span>
+                        </div>
+
+                        <div class="price-tag">
+                            {{ producto.productoPrecio | currency:'USD' }}
+                        </div>
+                        <!-- Botón Ver Detalles eliminado por solicitud del usuario -->
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="col-12 text-center py-5" *ngIf="!isLoading && categorias.length === 0">
+        <div class="py-5 bg-white rounded-3 shadow-sm">
+            <i class='bx bx-store-alt fs-1 text-primary mb-3'></i>
+            <h3 class="text-muted">Pronto te ayudaremos con nuestros maravillosos productos</h3>
+            <p class="text-muted small">Estamos actualizando nuestro inventario para ti.</p>
+        </div>
+    </div>
+
+</div>
