@@ -1,7 +1,7 @@
-# INFORME TÉCNICO DETALLADO
+*# INFORME TÉCNICO DETALLADO
 ## SISTEMA INTEGRAL DE FACTURACIÓN ELECTRÓNICA Y GESTIÓN DE INVENTARIO
 
-**Autor:** Equipo de Desarrollo (Antigravity & User)
+**Autor:** Equipo de Desarrollo
 **Fecha:** 18 de Enero de 2026
 **Versión:** 1.0.0
 
