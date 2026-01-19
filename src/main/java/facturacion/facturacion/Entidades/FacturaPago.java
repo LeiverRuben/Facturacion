@@ -9,12 +9,13 @@ import lombok.Setter;
 @Setter
 
 public class FacturaPago {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long facturaPagoId;
 
     @ManyToOne
+    @com.fasterxml.jackson.annotation.JsonBackReference
     private Factura factura;
 
     @ManyToOne

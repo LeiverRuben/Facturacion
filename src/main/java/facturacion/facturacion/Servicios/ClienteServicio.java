@@ -16,13 +16,11 @@ import facturacion.facturacion.Repositorios.ClienteRepositorio;
 import facturacion.facturacion.Repositorios.TipoDocumentoClienteRepositorio;
 import facturacion.facturacion.Repositorios.TipoDocumentoRepositorio;
 
-
-
 @Service
 public class ClienteServicio {
-@Autowired
+    @Autowired
     private ClienteRepositorio clienteRepositorio;
-    @Autowired  
+    @Autowired
     private TipoDocumentoRepositorio tipoDocumentoRepositorio;
     @Autowired
     private TipoDocumentoClienteRepositorio tipoDocumentoClienteRepositorio;
@@ -37,38 +35,47 @@ public class ClienteServicio {
         clienteRepositorio.save(cliente);
         try {
 
-        for (DocumentoListaDTO doc : documentos) {
-            TipoDocumentoCliente tipoDocumentoCliente = new TipoDocumentoCliente();
-            tipoDocumentoCliente.setCliente(cliente);
-            System.err.println(doc.getNumeroDocumentoCliente());
-            System.err.println(doc.getTipoDocumentoId());
-            tipoDocumentoCliente.setNumeroDocumentoCliente(doc.getNumeroDocumentoCliente());
-            //TipoDocumento tipoDocumento=tipoDocumentoRepositorio.getById(doc.getTipoDocumentoId());
+            for (DocumentoListaDTO doc : documentos) {
+                TipoDocumentoCliente tipoDocumentoCliente = new TipoDocumentoCliente();
+                tipoDocumentoCliente.setCliente(cliente);
+                System.err.println(doc.getNumeroDocumentoCliente());
+                System.err.println(doc.getTipoDocumentoId());
+                tipoDocumentoCliente.setNumeroDocumentoCliente(doc.getNumeroDocumentoCliente());
+                // TipoDocumento
+                // tipoDocumento=tipoDocumentoRepositorio.getById(doc.getTipoDocumentoId());
                 TipoDocumento tipoDocumento = tipoDocumentoRepositorio.findById(doc.getTipoDocumentoId())
-                .orElseThrow(() -> new RuntimeException("Tipo de documento no encontrado con ID: " + doc.getTipoDocumentoId()));
-            tipoDocumentoCliente.setTipoDocumento(tipoDocumento);
-            tipoDocumentoCliente.setTipoDocumentoFecha(LocalDateTime.now());
-            tipoDocumentoClienteRepositorio.save(tipoDocumentoCliente);
-        }    
-        }catch (Exception e) {
+                        .orElseThrow(() -> new RuntimeException(
+                                "Tipo de documento no encontrado con ID: " + doc.getTipoDocumentoId()));
+                tipoDocumentoCliente.setTipoDocumento(tipoDocumento);
+                tipoDocumentoCliente.setTipoDocumentoFecha(LocalDateTime.now());
+                tipoDocumentoClienteRepositorio.save(tipoDocumentoCliente);
+            }
+        } catch (Exception e) {
             clienteRepositorio.delete(cliente);
             throw new RuntimeException("Error no pudo crear los documentos del cliente");
-        
+
         }
         return cliente;
     }
-    public List<Cliente> listarAll(){
+
+    public Cliente guardarSimple(Cliente cliente) {
+        return clienteRepositorio.save(cliente);
+    }
+
+    public List<Cliente> listarAll() {
         return clienteRepositorio.findAll();
     }
 
     public Cliente buscarId(Long id) {
         return clienteRepositorio.findById(id).orElse(null);
     }
+
     @Transactional
     public Cliente actualizar(Long id, Cliente clienteActualizado) {
         // 1. Verificar existencia: Si no existe, lanza excepción (400/404)
         clienteRepositorio.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Cliente con ID " + id + " no existe para actualizar."));
+                .orElseThrow(
+                        () -> new IllegalArgumentException("Cliente con ID " + id + " no existe para actualizar."));
 
         // 2. Asignar el ID al objeto que se va a guardar
         clienteActualizado.setClienteId(id);
@@ -76,9 +83,9 @@ public class ClienteServicio {
         // 3. Guardar: Si el objeto tiene un ID, se ejecuta un UPDATE
         return clienteRepositorio.save(clienteActualizado);
     }
- 
-public void eliminar(Long id){
 
-    clienteRepositorio.deleteById(id);
+    public void eliminar(Long id) {
+
+        clienteRepositorio.deleteById(id);
     }
 }

@@ -23,6 +23,7 @@ public class DetalleFactura {
 
     @ManyToOne
     @JoinColumn(name = "facturaId", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonBackReference
     private Factura factura;
 
     @ManyToOne

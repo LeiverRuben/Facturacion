@@ -38,6 +38,7 @@ public class Factura {
     private Double totalFactura;
 
     private Integer estado; // 1=Registrada,2=Enviada,3=Autorizada
+    private String estadoSri; // AUTORIZADO, DEVUELTA, etc.
     private LocalDateTime fechaAutorizacion;
     private String mensajeSri;
 
@@ -48,6 +49,10 @@ public class Factura {
     @ManyToOne
     @JoinColumn(name = "empresa_id", nullable = false)
     private Empresa empresa;
+
+    @ManyToOne
+    @JoinColumn(name = "sesion_caja_id")
+    private SesionCaja sesionCaja;
 
     @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<DetalleFactura> detalles;

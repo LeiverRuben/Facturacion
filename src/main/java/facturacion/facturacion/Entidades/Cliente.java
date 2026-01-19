@@ -11,7 +11,6 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
-
 @Entity
 @Getter
 @Setter
@@ -23,13 +22,13 @@ public class Cliente {
 
     @NotBlank(message = "el nombre no puede estar vacio")
     @Size(min = 3, max = 200, message = "el nombre debe tener entre 3 a 200 caracteres")
-    @Column(length=200,nullable=false)
+    @Column(length = 200, nullable = false)
     private String clienteNombre;
     private String clienteDireccion;
     private String clienteApellido;
     private String clienteTelefono;
-    @Email(message="el correo no es valido")
+    @Email(message = "el correo no es valido")
     private String clienteEmail;
 
-    private Integer clienteEstado;
+    private Boolean clienteEstado;
 }

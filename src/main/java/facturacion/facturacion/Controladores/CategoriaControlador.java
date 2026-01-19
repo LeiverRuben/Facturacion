@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import facturacion.facturacion.Entidades.Categoria;
 import facturacion.facturacion.Servicios.CategoriaServicio;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequestMapping("/api/categoria")
@@ -39,12 +39,12 @@ public class CategoriaControlador {
 
     @PutMapping("/{id}")
     public Categoria actualizar(@PathVariable Long id, @RequestBody Categoria categoria) {
-        return categoriaServicio.actualizar(id, categoria); 
+        return categoriaServicio.actualizar(id, categoria);
     }
 
     @DeleteMapping("/{id}")
     public void eliminar(@PathVariable Long id) {
         categoriaServicio.eliminar(id);
     }
-    
+
 }

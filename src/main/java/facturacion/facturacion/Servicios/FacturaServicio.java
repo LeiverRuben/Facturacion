@@ -26,6 +26,8 @@ import facturacion.facturacion.Repositorios.*;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.security.core.context.SecurityContextHolder;
+
 @Service
 @RequiredArgsConstructor
 public class FacturaServicio {
@@ -38,6 +40,8 @@ public class FacturaServicio {
     private final ImpuestoDetalleRepositorio impuestoRepository;
     private final FormaPagoRepositorio formaPagoRepository;
     private final FacturaPagoRepositorio facturaPagoRepository;
+    private final SesionCajaRepositorio sesionCajaRepository;
+    private final UsuarioRepositorio usuarioRepository;
 
     @Transactional
     public Factura crearFacturaCompleta(FacturaRequestDTO request) {
@@ -49,6 +53,16 @@ public class FacturaServicio {
             throw new RuntimeException("Debe seleccionar un cliente.");
         if (request.getEmpresaId() == null)
             throw new RuntimeException("Debe seleccionar una empresa emisora.");
+
+        // Validar Sesión de Caja Activa
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        Usuario usuarioActual = usuarioRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new RuntimeException("Usuario autenticado no encontrado."));
+
+        SesionCaja sesionCaja = sesionCajaRepository.findSesionAbiertaPorUsuario(usuarioActual)
+                .orElseThrow(
+                        () -> new RuntimeException("⚠️ CAJA CERRADA: No se puede facturar sin abrir turno en caja."));
+
         Cliente cliente = clienteRepository.findById(request.getClienteId())
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado."));
         Empresa empresa = empresaRepository.findById(request.getEmpresaId())
@@ -66,6 +80,7 @@ public class FacturaServicio {
         factura.setEstado(1);
         factura.setCliente(cliente);
         factura.setEmpresa(empresa);
+        factura.setSesionCaja(sesionCaja); // Vincular sesión
         factura = facturaRepository.save(factura);
         List<DetalleFactura> detalles = new ArrayList<>();
         for (DetalleFacturaDTO detDTO : request.getDetalles()) {
@@ -214,5 +229,21 @@ public class FacturaServicio {
 
     public Factura guardar(Factura factura) {
         return facturaRepository.save(factura);
+    }
+
+    public List<Factura> listarAll() {
+        return facturaRepository.findAll();
+    }
+
+    @Transactional
+    public void eliminarFactura(Long id) {
+        Factura factura = facturaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Factura no encontrada"));
+
+        // 1. Eliminar pagos asociados (No tienen CascadeType.ALL en Entidad Factura)
+        facturaPagoRepository.deleteByFacturaFacturaId(id);
+
+        // 2. Eliminar Factura (Detalles se eliminan por CascadeType.ALL)
+        facturaRepository.delete(factura);
     }
 }

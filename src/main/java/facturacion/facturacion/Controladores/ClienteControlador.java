@@ -16,11 +16,10 @@ import facturacion.facturacion.Dto.ClienteConDocumentoDto;
 import facturacion.facturacion.Entidades.Cliente;
 import facturacion.facturacion.Servicios.ClienteServicio;
 
-
 @RestController
 @RequestMapping("/api/cliente")
 public class ClienteControlador {
-    
+
     @Autowired
     private ClienteServicio clienteServicio;
 
@@ -28,24 +27,31 @@ public class ClienteControlador {
     public Cliente guardar(@RequestBody ClienteConDocumentoDto cliente) {
         return clienteServicio.guardar(cliente);
     }
-    
+
+    @PostMapping("/simple")
+    public Cliente guardarSimple(@RequestBody Cliente cliente) {
+        return clienteServicio.guardarSimple(cliente);
+    }
+
     @GetMapping
     public List<Cliente> listarAll() {
         return clienteServicio.listarAll();
     }
+
     @GetMapping("/{id}")
     public Cliente buscarId(@PathVariable long Id) {
         return clienteServicio.buscarId(Id);
     }
+
     @PutMapping("/{id}")
     public Cliente actualizar(@PathVariable Long id, @RequestBody Cliente clienteActualizado) {
-    // ESTE MÉTODO FALTABA O NO FUE DETECTADO POR SPRING
-    return clienteServicio.actualizar(id, clienteActualizado);
+        // ESTE MÉTODO FALTABA O NO FUE DETECTADO POR SPRING
+        return clienteServicio.actualizar(id, clienteActualizado);
     }
-    
+
     @DeleteMapping("/{id}")
     public void eliminar(@PathVariable long id) {
         clienteServicio.eliminar(id);
     }
-    
+
 }

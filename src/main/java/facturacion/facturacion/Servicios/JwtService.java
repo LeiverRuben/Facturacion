@@ -15,8 +15,10 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    // Clave secreta para firmar el token (debería estar en un config externo seguro)
-    private final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    // Clave secreta para firmar el token (debería estar en un config externo
+    // seguro)
+    // Se elimina la generación aleatoria que invalidaba tokens al reiniciar
+    // private final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
     // Extraer username del token
     public String extractUsername(String token) {
@@ -29,9 +31,9 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
-     private Claims getClaims(String token) {
+    private Claims getClaims(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())  // aquí usamos el método para obtener la Key
+                .setSigningKey(getSigningKey()) // aquí usamos el método para obtener la Key
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
@@ -42,7 +44,14 @@ public class JwtService {
         try {
             getClaims(token);
             return true;
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            System.out.println("JwtService: El token ha expirado. " + e.getMessage());
+            return false;
+        } catch (io.jsonwebtoken.security.SignatureException e) {
+            System.out.println("JwtService: La firma del token es inválida. " + e.getMessage());
+            return false;
         } catch (Exception e) {
+            System.out.println("JwtService: Error validando token: " + e.getMessage());
             return false;
         }
     }
@@ -52,18 +61,20 @@ public class JwtService {
         final Date expiration = extractClaim(token, Claims::getExpiration);
         return expiration.before(new Date());
     }
+
     private final String SECRET_KEY = "claveMuySecretaDeAlMenos256bitsClaveMuySecretaDeAlMenos256bits";
 
     private Key getSigningKey() {
         byte[] keyBytes = SECRET_KEY.getBytes(StandardCharsets.UTF_8);
         return Keys.hmacShaKeyFor(keyBytes);
     }
+
     public String generateToken(String username) {
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1 hora
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)  // Aquí
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256) // Aquí
                 .compact();
     }
 }

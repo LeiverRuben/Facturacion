@@ -21,6 +21,7 @@ public class ImpuestoDetalle {
 
     @OneToOne
     @JoinColumn(name = "detalle_id")
+    @com.fasterxml.jackson.annotation.JsonBackReference
     private DetalleFactura detalleFactura;
 
     private String codigo;
@@ -28,5 +29,5 @@ public class ImpuestoDetalle {
     private Double tarifa;
     private Double baseImponible;
     private Double valor;
-    
+
 }

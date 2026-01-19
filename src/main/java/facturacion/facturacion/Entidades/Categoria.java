@@ -25,7 +25,7 @@ public class Categoria {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 
     @Column(name = "categoriaId")
-    private long categoriaId;
+    private Long categoriaId;
 
     @Column(name = "categoria_nombre")
     private String categoriaNombre;
@@ -33,8 +33,4 @@ public class Categoria {
     @Column(name = "categoria_descripcion")
     private String categoriaDescripcion;
 
-    @ManyToOne
-    @JoinColumn(name = "producto_id")
-    private Producto producto;
-    
 }
