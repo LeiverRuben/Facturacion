@@ -29,13 +29,13 @@ public class Factura {
     private String claveAcceso; // generado por SRI
 
     private LocalDateTime fechaEmision;
-    private Double subtotal12;
-    private Double subtotal0;
-    private Double subtotalNoObjeto;
-    private Double subtotalExento;
-    private Double totalDescuento;
-    private Double totalIva;
-    private Double totalFactura;
+    private Double subtotal12 = 0.0;
+    private Double subtotal0 = 0.0;
+    private Double subtotalNoObjeto = 0.0;
+    private Double subtotalExento = 0.0;
+    private Double totalDescuento = 0.0;
+    private Double totalIva = 0.0;
+    private Double totalFactura = 0.0;
 
     private Integer estado; // 1=Registrada,2=Enviada,3=Autorizada
     private String estadoSri; // AUTORIZADO, DEVUELTA, etc.
@@ -56,5 +56,8 @@ public class Factura {
 
     @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<DetalleFactura> detalles;
+
+    @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<FacturaPago> pagos;
 
 }

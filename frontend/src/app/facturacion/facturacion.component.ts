@@ -4,11 +4,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../environments/environment';
 import { Router } from '@angular/router';
+import Swal from 'sweetalert2';
 
 interface Cliente {
   clienteId: number;
   clienteNombre: string;
   clienteApellido: string;
+  identificacion?: string;
 }
 
 interface Producto {
@@ -42,6 +44,12 @@ interface Factura {
   mensajeSri?: string;
 }
 
+interface FormaPago {
+  formaPagoId: number;
+  nombre: string;
+  codigoSri: string;
+}
+
 @Component({
   selector: 'app-facturacion',
   standalone: true,
@@ -72,7 +80,7 @@ interface Factura {
               <select class="form-control" [(ngModel)]="facturaForm.clienteId" name="clienteId" required>
                 <option [ngValue]="0">Seleccionar cliente...</option>
                 <option *ngFor="let cliente of clientes" [value]="cliente.clienteId">
-                  {{ cliente.clienteNombre }} {{ cliente.clienteApellido }}
+                  {{ cliente.clienteNombre }} {{ cliente.clienteApellido }} {{ cliente.identificacion ? '(' + cliente.identificacion + ')' : '' }}
                 </option>
               </select>
             </div>
@@ -81,11 +89,26 @@ interface Factura {
               <label class="form-label">Fecha de Emisión</label>
               <input type="date" class="form-control" [(ngModel)]="facturaForm.fechaFactura" name="fechaFactura" required>
             </div>
+
+            
+            <div class="form-group">
+              <label class="form-label">Forma de Pago</label>
+              <select class="form-control" [(ngModel)]="selectedFormaPagoId" name="formaPagoId" required (change)="plazo = (selectedFormaPagoId == 6 ? plazo : 0)">
+                <option *ngFor="let fp of formasPago" [value]="fp.formaPagoId">
+                  {{ fp.nombre }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group" *ngIf="selectedFormaPagoId == 6">
+              <label class="form-label">Plazo (días)</label>
+              <input type="number" class="form-control" [(ngModel)]="plazo" name="plazo" min="0">
+            </div>
           </div>
 
           <!-- Sección de Detalles -->
-          <div class="p-4 bg-slate-50 rounded-lg border border-slate-200 mb-4" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;">
-             <h4 class="fw-bold fs-6 mb-3 text-secondary" style="color:#64748b; font-size: 0.95rem;">AGREGAR PRODUCTOS</h4>
+          <div class="card-premium p-4 mb-4">
+             <h4 class="fw-bold fs-6 mb-3 text-secondary" style="font-size: 0.95rem;">AGREGAR PRODUCTOS</h4>
              
              <div class="row g-3 align-items-end" style="display:flex; gap:1rem; align-items:flex-end; margin-bottom:1rem;">
                 <div class="" style="flex: 2;">
@@ -137,9 +160,9 @@ interface Factura {
              </div>
 
              <div class="d-flex justify-content-end mt-3" *ngIf="facturaForm.detalles.length > 0">
-                <div class="text-end p-3 rounded" style="background:white; border:1px solid #e2e8f0; min-width: 250px;">
+                <div class="text-end p-3 rounded border" style="min-width: 250px;">
                    <span class="d-block text-muted small">TOTAL A PAGAR</span>
-                   <span class="d-block fs-2 fw-bold text-primary" style="font-size:1.5rem; color:var(--primary-color);">{{ calcularTotal() | currency:'USD':'symbol':'1.2-2' }}</span>
+                   <span class="d-block fs-2 fw-bold text-primary" style="font-size:1.5rem;">{{ calcularTotal() | currency:'USD':'symbol':'1.2-2' }}</span>
                 </div>
              </div>
           </div>
@@ -151,6 +174,15 @@ interface Factura {
             </button>
           </div>
         </form>
+      </div>
+
+      <!-- Filtros -->
+      <div class="mb-3">
+        <div class="btn-group" role="group">
+          <button type="button" class="btn" [ngClass]="{'btn-primary': filterStatus === 'TODAS', 'btn-outline-primary': filterStatus !== 'TODAS'}" (click)="filterStatus = 'TODAS'">Todas</button>
+          <button type="button" class="btn" [ngClass]="{'btn-primary': filterStatus === 'ACTIVAS', 'btn-outline-primary': filterStatus !== 'ACTIVAS'}" (click)="filterStatus = 'ACTIVAS'">Emitidas</button>
+          <button type="button" class="btn" [ngClass]="{'btn-primary': filterStatus === 'ANULADAS', 'btn-outline-primary': filterStatus !== 'ANULADAS'}" (click)="filterStatus = 'ANULADAS'">Anuladas</button>
+        </div>
       </div>
 
       <!-- Lista de facturas -->
@@ -167,7 +199,7 @@ interface Factura {
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let factura of facturas">
+            <tr *ngFor="let factura of filteredFacturas">
               <td>#{{ factura.facturaId }}</td>
               <td>
                 <div class="fw-bold text-dark">{{ factura.cliente?.clienteNombre || factura.clienteNombre }} {{ factura.cliente?.clienteApellido }}</div>
@@ -178,9 +210,10 @@ interface Factura {
                 <span class="badge" 
                       [ngClass]="{
                         'badge-success': factura.estadoSri === 'AUTORIZADO', 
-                        'badge-danger': factura.estadoSri !== 'AUTORIZADO' && factura.estadoSri !== 'PENDIENTE' && factura.estadoSri !== 'ENVIANDO...', 
+                        'badge-danger': factura.estadoSri !== 'AUTORIZADO' && factura.estadoSri !== 'PENDIENTE' && factura.estadoSri !== 'ENVIANDO...' && factura.estadoSri !== 'ANULADA', 
                         'badge-warning': factura.estadoSri === 'PENDIENTE',
-                        'badge-info': factura.estadoSri === 'ENVIANDO...'
+                        'badge-info': factura.estadoSri === 'ENVIANDO...',
+                        'badge-secondary': factura.estadoSri === 'ANULADA'
                       }">
                   {{ factura.estadoSri || 'PENDIENTE' }}
                 </span>
@@ -194,19 +227,19 @@ interface Factura {
                     <button class="btn-action btn-secondary" (click)="descargarPdf(factura.facturaId!)" title="Imprimir PDF" style="background: #475569; color: white;">
                       <i class='bx bxs-file-pdf'></i>
                     </button>
-                    <button class="btn-action btn-primary" *ngIf="factura.estadoSri !== 'AUTORIZADO'" (click)="enviarSri(factura)" title="Enviar al SRI">
+                    <button class="btn-action btn-primary" *ngIf="factura.estadoSri !== 'AUTORIZADO' && factura.estadoSri !== 'ANULADA'" (click)="enviarSri(factura)" title="Enviar al SRI">
                       <i class='bx bx-send'></i>
                     </button>
-                    <button class="btn-action btn-danger" (click)="deleteFactura(factura.facturaId!)" title="Eliminar">
-                      <i class='bx bx-trash'></i>
+                    <button class="btn-action btn-danger" *ngIf="factura.estadoSri !== 'ANULADA'" (click)="anularFactura(factura.facturaId!)" title="Anular Factura" style="background-color: #ef4444; color: white;">
+                      <i class='bx bx-x-circle'></i>
                     </button>
                   </div>
                 </td>
             </tr>
-            <tr *ngIf="facturas.length === 0">
+            <tr *ngIf="filteredFacturas.length === 0">
               <td colspan="6" class="text-center py-5 text-muted">
                 <i class='bx bx-receipt fs-1 mb-2'></i>
-                <p>No se han emitido facturas.</p>
+                <p>No se encontraron facturas.</p>
               </td>
             </tr>
           </tbody>
@@ -301,6 +334,23 @@ export class FacturacionComponent implements OnInit {
   selectedFactura: Factura | null = null;
   selectedProductoId: number | null = null;
   selectedCantidad: number = 1;
+
+  formasPago: FormaPago[] = [];
+  selectedFormaPagoId: number = 1; // Default
+  plazo: number = 0;
+
+  filterStatus: 'TODAS' | 'ACTIVAS' | 'ANULADAS' = 'TODAS';
+
+  get filteredFacturas() {
+    if (this.filterStatus === 'TODAS') {
+      return this.facturas;
+    } else if (this.filterStatus === 'ACTIVAS') {
+      return this.facturas.filter(f => f.estadoSri !== 'ANULADA');
+    } else {
+      return this.facturas.filter(f => f.estadoSri === 'ANULADA');
+    }
+  }
+
   facturaForm: Factura = {
     clienteId: 0,
     fechaFactura: new Date().toISOString().split('T')[0],
@@ -314,6 +364,7 @@ export class FacturacionComponent implements OnInit {
     this.checkCajaStatus(); // Verificar Caja primero
     this.loadClientes();
     this.loadProductos();
+    this.loadFormasPago();
     this.loadFacturas();
   }
 
@@ -321,18 +372,25 @@ export class FacturacionComponent implements OnInit {
     this.http.get(`${this.apiUrl}/api/caja/estado`).subscribe({
       next: (res: any) => {
         if (res.estado !== 'ABIERTA') {
-          alert('⚠️ DEBE ABRIR UNA CAJA PARA PODER FACTURAR.');
-          this.router.navigate(['/caja']);
+          Swal.fire({
+            icon: 'warning',
+            title: 'Caja Cerrada',
+            text: '⚠️ DEBE ABRIR UNA CAJA PARA PODER FACTURAR.',
+            confirmButtonText: 'Ir a Caja'
+          }).then(() => {
+            this.router.navigate(['/caja']);
+          });
         }
       },
       error: (err) => {
         console.error('Error verificando caja:', err);
-        // Optionally, handle error more gracefully, e.g., show a message and redirect
-        alert('Error al verificar el estado de la caja. Por favor, intente de nuevo.');
+        Swal.fire('Error', 'Error al verificar el estado de la caja.', 'error');
         this.router.navigate(['/caja']);
       }
     });
   }
+
+  // ... (keeping other methods same until saveFactura)
 
   loadClientes() {
     this.http.get<Cliente[]>(`${this.apiUrl}/api/cliente`).subscribe({
@@ -367,10 +425,44 @@ export class FacturacionComponent implements OnInit {
     });
   }
 
+  loadFormasPago() {
+    this.http.get<FormaPago[]>(`${this.apiUrl}/api/formapago`).subscribe({
+      next: (data) => {
+        this.formasPago = data;
+        // Si no hay seleccionado, seleccionar el primero o el ID 1
+        if (!this.selectedFormaPagoId && data.length > 0) {
+          this.selectedFormaPagoId = data[0].formaPagoId;
+        }
+      },
+      error: (error) => console.error('Error loading payment methods:', error)
+    });
+  }
+
   addDetalle() {
-    if (!this.selectedProductoId || !this.selectedCantidad) return;
+    if (!this.selectedProductoId) return;
+
+    if (!this.selectedCantidad || this.selectedCantidad <= 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Atención',
+        text: '¡ELIJA CANTIDAD!',
+        confirmButtonColor: '#3085d6',
+      });
+      return;
+    }
     const producto = this.productos.find(p => p.productoId === Number(this.selectedProductoId));
     if (!producto) return;
+
+    // VALIDACIÓN DE STOCK
+    if (this.selectedCantidad > producto.productoStock) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Stock Insuficiente',
+        html: `Solo tienes <b>${producto.productoStock}</b> unidades disponibles de <br>${producto.productoNombre}.`,
+        confirmButtonText: 'Entendido'
+      });
+      return;
+    }
 
     const detalle: DetalleFactura = {
       productoId: producto.productoId,
@@ -427,9 +519,9 @@ export class FacturacionComponent implements OnInit {
       })),
       pagos: [
         {
-          metodoPagoId: 1,
+          metodoPagoId: this.selectedFormaPagoId,
           total: totalFactura,
-          plazo: 0,
+          plazo: this.plazo,
           unidadTiempo: "dias"
         }
       ]
@@ -440,12 +532,16 @@ export class FacturacionComponent implements OnInit {
         console.log('Factura creada:', response);
         this.loadFacturas();
         this.cancelFactura();
-        alert('Factura creada exitosamente. Ahora puedes enviarla al SRI desde la lista.');
+        Swal.fire({
+          icon: 'success',
+          title: 'Factura Creada',
+          text: 'Factura creada exitosamente. Ahora puedes enviarla al SRI.'
+        });
       },
       error: (error) => {
         console.error('Error creating invoice:', error);
         const errorMessage = error.error?.message || error.error || error.message || 'Unknown error';
-        alert('Error al crear factura: ' + (typeof errorMessage === 'object' ? JSON.stringify(errorMessage) : errorMessage));
+        Swal.fire('Error', 'Error al crear factura: ' + (typeof errorMessage === 'object' ? JSON.stringify(errorMessage) : errorMessage), 'error');
       }
     });
   }
@@ -459,33 +555,55 @@ export class FacturacionComponent implements OnInit {
     this.http.post<any>(`${this.apiUrl}/api/facturas/enviar-sri/${factura.facturaId}`, {}).subscribe({
       next: (response) => {
         console.log('Respuesta SRI:', response);
-        alert(response.mensaje);
-        this.loadFacturas(); // Recargar para ver el estado actualizado
+        Swal.fire({
+          icon: 'success',
+          title: 'Respuesta SRI',
+          text: response.mensaje
+        });
+        this.loadFacturas();
       },
       error: (error) => {
         console.error('Error enviando al SRI:', error);
         factura.estadoSri = 'ERROR';
-        alert('Error al enviar al SRI: ' + (error.error || error.message));
+        Swal.fire('Error SRI', 'Error al enviar al SRI: ' + (error.error || error.message), 'error');
         this.loadFacturas();
       }
     });
   }
 
+  // ... 
+
   viewFactura(factura: Factura) {
     this.selectedFactura = factura;
   }
 
-  deleteFactura(id: number) {
-    if (confirm('¿Está seguro de que desea eliminar esta factura?')) {
-      this.http.delete(`${this.apiUrl}/api/facturas/${id}`).subscribe({
-        next: () => {
-          this.loadFacturas();
-        },
-        error: (error) => {
-          console.error('Error deleting invoice:', error);
-        }
-      });
-    }
+  anularFactura(id: number) {
+    Swal.fire({
+      title: '¿Anular Factura?',
+      text: "Esta acción es irreversible y cambiará el estado a ANULADA.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, anular',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Solicitamos 'text' para evitar que Angular intente parsear JSON automáticamente y falle si es texto plano.
+        this.http.put(`${this.apiUrl}/api/facturas/${id}/anular`, {}, { responseType: 'text' }).subscribe({
+          next: (response) => {
+            // Si llega aquí, es un 200 OK.
+            Swal.fire('Anulada', 'La factura ha sido anulada.', 'success');
+            this.loadFacturas();
+          },
+          error: (error) => {
+            console.error('Error anulando factura:', error);
+            const msg = error.error || error.message;
+            Swal.fire('Error', 'Error al anular factura: ' + msg, 'error');
+          }
+        });
+      }
+    });
   }
 
   cancelFactura() {
@@ -496,9 +614,12 @@ export class FacturacionComponent implements OnInit {
       detalles: []
     };
     this.showCreateForm = false;
+    this.selectedFormaPagoId = 1;
+    this.plazo = 0;
     this.selectedProductoId = null;
     this.selectedCantidad = 1;
   }
+
 
   validateNumber(event: KeyboardEvent) {
     const charCode = (event.which) ? event.which : event.keyCode;
@@ -517,7 +638,18 @@ export class FacturacionComponent implements OnInit {
         const url = window.URL.createObjectURL(blob);
         window.open(url, '_blank');
       },
-      error: (err) => console.error('Error al descargar PDF', err)
+      error: (err) => {
+        console.error('Error al descargar PDF', err);
+        if (err.error instanceof Blob) {
+          const reader = new FileReader();
+          reader.onload = (e: any) => {
+            alert('Error al descargar PDF: ' + e.target.result);
+          };
+          reader.readAsText(err.error);
+        } else {
+          alert('Error al descargar PDF: ' + (err.message || 'Error desconocido'));
+        }
+      }
     });
   }
 }

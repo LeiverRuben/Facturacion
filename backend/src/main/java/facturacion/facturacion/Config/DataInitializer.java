@@ -83,14 +83,15 @@ public class DataInitializer implements CommandLineRunner {
     private void seedDataForTesting() {
         // ... (existing code) ...
         // 1. Empresa Default
-        String rucDefault = "0302152392001";
-        String rutaFirma = "C:\\Users\\lzamo\\OneDrive\\Escritorio\\Clavesri\\DANIEL EDUARDO URGILES SARMIENTO 0302152392-211025120131 (1).p12";
-        String claveFirma = "DANIEL2025";
+        // 1. Empresa Default
+        String rucDefault = "0910683853001";
+        String rutaFirma = "PENDIENTE";
+        String claveFirma = "PENDIENTE";
 
         if (empresaRepositorio.count() == 0) {
             facturacion.facturacion.Entidades.Empresa empresa = new facturacion.facturacion.Entidades.Empresa();
-            empresa.setRazonSocial("MI EMPRESA S.A.");
-            empresa.setNombreComercial("TIENDA DE PRUEBA");
+            empresa.setRazonSocial("GLENN FRANCO VEGA JARAMILLO");
+            empresa.setNombreComercial("GLENN FRANCO VEGA JARAMILLO");
             empresa.setRuc(rucDefault);
             empresa.setDirMatriz("Av. Amazonas y Naciones Unidas");
             empresa.setDirEstablecimiento("Av. Amazonas y Naciones Unidas");

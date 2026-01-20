@@ -1,12 +1,11 @@
 package facturacion.facturacion.Servicios;
 
 import org.apache.xml.security.Init;
-import org.apache.xml.security.algorithms.MessageDigestAlgorithm;
-import org.apache.xml.security.c14n.Canonicalizer;
+
 import org.apache.xml.security.signature.XMLSignature;
 import org.apache.xml.security.transforms.Transforms;
 import org.apache.xml.security.utils.Constants;
-import org.apache.xml.security.utils.ElementProxy;
+
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
@@ -17,11 +16,10 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.ByteArrayOutputStream;
+
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
-import java.math.BigInteger;
+
 import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.PrivateKey;

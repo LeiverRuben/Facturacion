@@ -31,4 +31,7 @@ public class Cliente {
     private String clienteEmail;
 
     private Boolean clienteEstado;
+
+    @Column(length = 13)
+    private String identificacion;
 }

@@ -8,7 +8,7 @@
     <!-- Alertas -->
     <div *ngIf="mensaje" class="alert mb-3" [ngClass]="{
         'alert-success': tipoMensaje === 'success',
-        'alert-error': tipoMensaje === 'error',
+        'alert-danger': tipoMensaje === 'error',
         'alert-info': tipoMensaje === 'info'
     }">
         {{ mensaje }}
@@ -45,7 +45,7 @@
         <div class="row g-3">
             <!-- Saldo Actual -->
             <div class="col-md-4">
-                <div class="card-stat bg-white p-4 rounded-3 shadow-sm border text-center h-100">
+                <div class="card-premium p-4 rounded-3 shadow-sm border text-center h-100">
                     <p class="text-muted mb-1 text-uppercase fw-bold small">Saldo Actual en Caja</p>
                     <h2 class="balance-amount fw-bold text-success">{{ resumen.saldoActual | currency:'USD' }}</h2>
                     <p class="text-muted small mb-0"><i class='bx bx-check-circle'></i> Balance calculado</p>
@@ -54,7 +54,7 @@
 
             <!-- Ventas Hoy -->
             <div class="col-md-4">
-                <div class="card-stat bg-white p-4 rounded-3 shadow-sm border text-center h-100">
+                <div class="card-premium p-4 rounded-3 shadow-sm border text-center h-100">
                     <p class="text-muted mb-1 text-uppercase fw-bold small">Ventas del Turno</p>
                     <h3 class="fw-bold text-primary">{{ resumen.totalVentas | currency:'USD' }}</h3>
                     <p class="text-muted small mb-0">Facturado hoy</p>
@@ -63,7 +63,7 @@
 
             <!-- Movimientos -->
             <div class="col-md-4">
-                <div class="card-stat bg-white p-4 rounded-3 shadow-sm border text-center h-100">
+                <div class="card-premium p-4 rounded-3 shadow-sm border text-center h-100">
                     <p class="text-muted mb-1 text-uppercase fw-bold small">Flujo de Efectivo</p>
                     <div class="d-flex justify-content-between px-3">
                         <span class="text-success"><i class='bx bx-up-arrow-alt'></i> {{ resumen.totalIngresos |
@@ -94,7 +94,8 @@
             <div class="row g-2">
                 <div class="col-md-4">
                     <label class="form-label">Monto ($)</label>
-                    <input type="number" [(ngModel)]="movimientoData.monto" class="form-control" placeholder="0.00">
+                    <input type="number" [(ngModel)]="movimientoData.monto" class="form-control" placeholder="0.00"
+                        (keypress)="validarInputNumerico($event)">
                 </div>
                 <div class="col-md-8">
                     <label class="form-label">Descripción / Motivo</label>
@@ -111,12 +112,12 @@
 
         <!-- Tabla de Movimientos -->
         <div class="card-premium p-0 mb-4 overflow-hidden">
-            <div class="p-3 bg-light border-bottom">
+            <div class="p-3 border-bottom">
                 <h5 class="m-0 fw-bold">Historial de Movimientos</h5>
             </div>
             <div class="table-responsive">
-                <table class="table mb-0">
-                    <thead class="bg-light">
+                <table class="table-modern mb-0">
+                    <thead>
                         <tr>
                             <th>Hora</th>
                             <th>Tipo</th>
@@ -145,15 +146,15 @@
         </div>
 
         <!-- Cierre de Caja -->
-        <div class="card-premium p-4 bg-slate-50 border text-center mt-5">
+        <div class="card-premium p-4 border text-center mt-5">
             <h4 class="text-danger mb-3"><i class='bx bx-lock-alt'></i> Cierre de Turno</h4>
             <p class="mb-3">El sistema calcula que deberías tener: <strong>{{ resumen.saldoActual | currency:'USD'
                     }}</strong></p>
 
             <div class="form-group mx-auto" style="max-width:300px;">
                 <label class="form-label">Dinero Contado Realmente ($)</label>
-                <input type="number" [(ngModel)]="montoCierre" class="form-control-lg text-center bg-white"
-                    placeholder="0.00">
+                <input type="number" [(ngModel)]="montoCierre" class="form-control-lg text-center" placeholder="0.00"
+                    (keypress)="validarInputNumerico($event)">
             </div>
 
             <div *ngIf="montoCierre > 0" class="mt-2 mb-3">
@@ -179,7 +180,7 @@
             </div>
 
             <div class="d-flex align-items-center gap-3">
-                <div class="bg-white px-3 py-2 rounded-3 border shadow-sm d-flex align-items-center gap-2">
+                <div class="card-premium px-3 py-2 rounded-3 border shadow-sm d-flex align-items-center gap-2">
                     <span class="text-muted small fw-bold text-uppercase">Total Histórico Ventas:</span>
                     <span class="text-primary fw-bold">{{ totalAcumuladoVentas | currency:'USD' }}</span>
                 </div>
@@ -206,8 +207,8 @@
 
         <div class="card-premium p-0 overflow-hidden">
             <div class="table-responsive">
-                <table class="table mb-0">
-                    <thead class="bg-light">
+                <table class="table-modern mb-0">
+                    <thead>
                         <tr>
                             <th>Fecha Apertura</th>
                             <th>Fecha Cierre</th>
@@ -216,6 +217,7 @@
                             <th class="text-end">Total Ventas</th>
                             <th class="text-end">Monto Final</th>
                             <th class="text-center">Estado</th>
+                            <th class="text-end">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -232,6 +234,13 @@
                                     [ngClass]="{'bg-success': sesion.estado === 'ABIERTA', 'bg-secondary': sesion.estado === 'CERRADA'}">
                                     {{ sesion.estado }}
                                 </span>
+                            </td>
+                            <td class="text-end">
+                                <button class="btn btn-outline-danger btn-sm" (click)="eliminarSesion(sesion.id)"
+                                    title="Eliminar registro"
+                                    *ngIf="sesion.estado === 'CERRADA' || sesion.totalVentasEfectivo === 0">
+                                    <i class='bx bx-trash'></i>
+                                </button>
                             </td>
                         </tr>
                         <tr *ngIf="filteredHistorial.length === 0">

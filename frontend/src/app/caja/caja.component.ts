@@ -212,12 +212,46 @@ export class CajaComponent implements OnInit {
         });
     }
 
+    eliminarSesion(sesionId: number) {
+        if (!confirm('¿Estás seguro de eliminar este registro de caja? Esta acción no se puede deshacer.')) return;
+
+        this.http.delete(`${this.apiUrl}/api/caja/eliminar/${sesionId}`).subscribe({
+            next: (res: any) => {
+                this.mostrarMensaje('Registro eliminado correctamente.', 'success');
+                this.cargarHistorial();
+            },
+            error: (err) => {
+                // Manejo de error si el backend envía un map con "error"
+                const errorMsg = err.error?.error || err.error || err.message;
+                this.mostrarMensaje('No se pudo eliminar: ' + errorMsg, 'error');
+            }
+        });
+    }
+
     mostrarMensaje(msg: string, tipo: string) {
         this.mensaje = msg;
         this.tipoMensaje = tipo;
+        window.scrollTo({ top: 0, behavior: 'smooth' }); // Asegurar que el usuario vea el mensaje
         setTimeout(() => {
             this.mensaje = '';
             this.tipoMensaje = '';
         }, 5000);
+    }
+
+    validarInputNumerico(event: any) {
+        const pattern = /[0-9.]/;
+        const inputChar = String.fromCharCode(event.charCode);
+
+        if (!pattern.test(inputChar)) {
+            // Caracter inválido
+            event.preventDefault();
+            return;
+        }
+
+        // Evitar múltiples puntos decimales
+        const currentText = event.target.value;
+        if (inputChar === '.' && currentText.includes('.')) {
+            event.preventDefault();
+        }
     }
 }

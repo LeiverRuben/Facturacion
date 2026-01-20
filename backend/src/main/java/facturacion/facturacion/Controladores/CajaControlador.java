@@ -96,4 +96,14 @@ public class CajaControlador {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return authentication.getName();
     }
+
+    @DeleteMapping("/eliminar/{id}")
+    public ResponseEntity<?> eliminarSesion(@PathVariable Long id) {
+        try {
+            cajaServicio.eliminarSesion(id);
+            return ResponseEntity.ok(Map.of("mensaje", "Sesión eliminada correctamente"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

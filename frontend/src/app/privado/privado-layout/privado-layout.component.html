@@ -58,6 +58,24 @@
     </nav>
 
     <div class="sidebar-footer">
+
+      <!-- Settings Menu Trigger -->
+      <div class="settings-container" [class.active]="showSettingsMenu">
+        <button class="btn-settings" (click)="toggleSettings()" title="Configuración">
+          <i class='bx bx-cog'></i>
+          <span>Configuración</span>
+        </button>
+
+        <!-- Popup Menu -->
+        <div class="settings-popup" *ngIf="showSettingsMenu">
+          <div class="settings-header">Preferencias</div>
+          <button class="settings-item" (click)="toggleTheme()">
+            <i class='bx' [ngClass]="isDarkMode ? 'bx-sun' : 'bx-moon'"></i>
+            <span>{{ isDarkMode ? 'Modo Claro' : 'Modo Oscuro' }}</span>
+          </button>
+        </div>
+      </div>
+
       <button class="btn-logout" (click)="logout()">
         <i class='bx bx-log-out'></i> Cerrar Sesión
       </button>

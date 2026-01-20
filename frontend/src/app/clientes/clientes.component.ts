@@ -11,6 +11,7 @@ interface Cliente {
   clienteEmail: string;
   clienteTelefono: string;
   clienteDireccion: string;
+  identificacion?: string; // Nuevo campo
   clienteEstado: boolean;
 }
 
@@ -37,6 +38,11 @@ interface Cliente {
         
         <form (ngSubmit)="saveCliente()">
           <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Identificación (RUC/CI)</label>
+              <input type="text" class="form-control" [(ngModel)]="clienteForm.identificacion" name="identificacion" placeholder="Ej. 1777777777001" maxlength="13">
+            </div>
+
             <div class="form-group">
               <label class="form-label">Nombre</label>
               <div class="input-group-modern"> <!-- Using input group for icons if desired, or just form-control -->
@@ -78,6 +84,7 @@ interface Cliente {
           <thead>
             <tr>
               <th>ID</th>
+              <th>Identificación</th>
               <th>Cliente</th>
               <th>Contacto</th>
               <th>Dirección</th>
@@ -88,6 +95,7 @@ interface Cliente {
           <tbody>
             <tr *ngFor="let cliente of clientes">
               <td>#{{ cliente.clienteId }}</td>
+              <td class="fw-bold">{{ cliente.identificacion || 'N/A' }}</td>
               <td>
                 <div class="fw-bold text-slate-800">{{ cliente.clienteNombre }} {{ cliente.clienteApellido }}</div>
                 <div class="small text-muted">{{ cliente.clienteEmail }}</div>
@@ -111,7 +119,7 @@ interface Cliente {
               </td>
             </tr>
             <tr *ngIf="clientes.length === 0">
-              <td colspan="6" class="text-center py-5 text-muted">
+              <td colspan="7" class="text-center py-5 text-muted">
                 <i class='bx bx-user-x fs-1 mb-2'></i>
                 <p>No hay clientes registrados.</p>
               </td>
@@ -135,6 +143,7 @@ export class ClientesComponent implements OnInit {
   showCreateForm = false;
   editingCliente = false;
   clienteForm: Cliente = {
+    identificacion: '',
     clienteNombre: '',
     clienteApellido: '',
     clienteEmail: '',
@@ -207,6 +216,7 @@ export class ClientesComponent implements OnInit {
 
   cancelEdit() {
     this.clienteForm = {
+      identificacion: '',
       clienteNombre: '',
       clienteApellido: '',
       clienteEmail: '',

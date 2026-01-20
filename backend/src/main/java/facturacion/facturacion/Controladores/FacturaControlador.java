@@ -35,6 +35,7 @@ public class FacturaControlador {
 
             String claveAcceso = facturaService.generarClaveAcceso(factura);
             factura.setClaveAcceso(claveAcceso);
+            facturaService.guardar(factura); // GUARDA LA CLAVE EN BD
 
             String xmlSinFirma = facturaService.generarXMLFactura(factura);
 
@@ -57,6 +58,8 @@ public class FacturaControlador {
     }
 
     private final facturacion.facturacion.Servicios.SriServicio sriServicio;
+    @Autowired
+    private facturacion.facturacion.Servicios.EmailServicio emailServicio;
 
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_CONTADOR', 'ROLE_VENDEDOR')")
     @PostMapping("/enviar-sri/{id}")
@@ -92,6 +95,21 @@ public class FacturaControlador {
                 if ("AUTORIZADO".equals(estadoAutorizacion)) {
                     factura.setEstado(3); // Autorizada
                     factura.setFechaAutorizacion(java.time.LocalDateTime.now());
+
+                    // --- ENVIAR EMAIL AUTOMÁTICO ---
+                    String emailCliente = factura.getCliente().getClienteEmail();
+                    if (emailCliente != null && !emailCliente.isEmpty()
+                            && !emailCliente.equalsIgnoreCase("consumidor@mail.com")) {
+                        try {
+                            byte[] pdfBytes = pdfGenServicio.generarPdfFactura(factura);
+                            emailServicio.enviarFacturaAutorizada(emailCliente, factura.getSecuencial(), pdfBytes,
+                                    xmlBytes);
+                        } catch (Exception ex) {
+                            System.err.println("No se pudo enviar el email: " + ex.getMessage());
+                            // No detiene el flujo, solo loguea el error
+                        }
+                    }
+                    // --------------------------------
                 } else {
                     factura.setEstado(2); // Enviada pero no autorizada (Rechazada, etc)
                 }
@@ -123,7 +141,7 @@ public class FacturaControlador {
     private facturacion.facturacion.Servicios.PdfGenServicio pdfGenServicio;
 
     @GetMapping("/{id}/pdf")
-    public ResponseEntity<byte[]> descargarPdf(@PathVariable Long id) {
+    public ResponseEntity<?> descargarPdf(@PathVariable Long id) {
         try {
             Factura factura = facturaService.buscarPorId(id);
             if (factura == null) {
@@ -139,18 +157,19 @@ public class FacturaControlador {
                     .body(pdfBytes);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
-    public ResponseEntity<?> eliminarFactura(@PathVariable Long id) {
+    @PutMapping("/{id}/anular")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_CONTADOR')")
+    public ResponseEntity<?> anularFactura(@PathVariable Long id) {
         try {
-            facturaService.eliminarFactura(id);
-            return ResponseEntity.ok("Factura eliminada correctamente");
+            facturaService.anularFactura(id);
+            return ResponseEntity.ok(java.util.Collections.singletonMap("mensaje", "Factura anulada correctamente"));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al eliminar factura: " + e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(java.util.Collections.singletonMap("error", "Error al anular factura: " + e.getMessage()));
         }
     }
 

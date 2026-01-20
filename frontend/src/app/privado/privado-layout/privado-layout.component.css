@@ -2,8 +2,8 @@
 .layout-wrapper {
     display: flex;
     min-height: 100vh;
-    background-color: #f8fafc;
-    /* Slate 50 */
+    background-color: var(--bg-color);
+    color: var(--text-main);
 }
 
 /* Sidebar Styling */
@@ -12,9 +12,8 @@
     height: 100vh;
     position: sticky;
     top: 0;
-    background: #1e1b4b;
-    /* Indigo 950 */
-    color: white;
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
     display: flex;
     flex-direction: column;
     transition: all 0.3s ease;
@@ -74,8 +73,7 @@
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: #64748b;
-    /* Slate 500 */
+    color: var(--sidebar-text-muted);
     margin: 1.5rem 0 0.5rem 1rem;
     font-weight: 600;
 }
@@ -85,8 +83,7 @@
     align-items: center;
     gap: 12px;
     padding: 12px 16px;
-    color: #cbd5e1;
-    /* Slate 300 */
+    color: var(--sidebar-text);
     text-decoration: none;
     border-radius: 8px;
     transition: all 0.2s;
@@ -112,15 +109,23 @@
 .sidebar-footer {
     padding: 1.5rem;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
-.btn-logout {
+/* Settings Menu */
+.settings-container {
+    position: relative;
+    width: 100%;
+}
+
+.btn-settings {
     width: 100%;
     padding: 10px;
-    background: transparent;
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    color: #ef4444;
-    /* Red 500 */
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--sidebar-text);
     border-radius: 8px;
     cursor: pointer;
     display: flex;
@@ -128,11 +133,72 @@
     justify-content: center;
     gap: 8px;
     transition: all 0.2s;
+    font-size: 0.9rem;
 }
 
-.btn-logout:hover {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: #ef4444;
+.btn-settings:hover,
+.settings-container.active .btn-settings {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+
+.settings-popup {
+    position: absolute;
+    bottom: 110%;
+    /* Makes it appear above */
+    left: 0;
+    width: 100%;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+    padding: 0.5rem;
+    z-index: 100;
+    animation: fadeIn 0.15s ease-out;
+    color: var(--text-main);
+}
+
+.settings-header {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    padding: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 0.5rem;
+}
+
+.settings-item {
+    width: 100%;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+.settings-item:hover {
+    background: var(--bg-color);
+    color: var(--primary-color);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Main Content Area */

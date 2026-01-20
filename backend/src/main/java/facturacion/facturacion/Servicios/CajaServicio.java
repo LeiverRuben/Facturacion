@@ -154,4 +154,27 @@ public class CajaServicio {
         public java.util.List<SesionCaja> obtenerHistorial() {
                 return sesionCajaRepositorio.findAllByOrderByFechaAperturaDesc();
         }
+
+        // Eliminar Sesión (Solo si no tiene facturas)
+        public void eliminarSesion(Long sesionId) {
+                SesionCaja sesion = sesionCajaRepositorio.findById(sesionId)
+                                .orElseThrow(() -> new RuntimeException("Sesión no encontrada"));
+
+                // 1. Verificar si tiene facturas asociadas
+                java.util.List<facturacion.facturacion.Entidades.Factura> facturas = facturaRepositorio
+                                .findBySesionCaja(sesion);
+
+                if (!facturas.isEmpty()) {
+                        throw new RuntimeException(
+                                        "No se puede eliminar la sesión porque tiene ventas registradas. Debe anular las facturas primero.");
+                }
+
+                // 2. Eliminar Movimientos asociados (Cascada manual si no está en JPA)
+                java.util.List<facturacion.facturacion.Entidades.MovimientoCaja> movimientos = movimientoCajaRepositorio
+                                .findBySesionCaja(sesion);
+                movimientoCajaRepositorio.deleteAll(movimientos);
+
+                // 3. Eliminar la sesión
+                sesionCajaRepositorio.delete(sesion);
+        }
 }

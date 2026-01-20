@@ -78,6 +78,7 @@ public class FacturaServicio {
         factura.setTotalIva(request.getTotalIva());
         factura.setTotalFactura(request.getTotalFactura());
         factura.setEstado(1);
+        factura.setEstadoSri("PENDIENTE");
         factura.setCliente(cliente);
         factura.setEmpresa(empresa);
         factura.setSesionCaja(sesionCaja); // Vincular sesión
@@ -166,14 +167,17 @@ public class FacturaServicio {
 
             Element facturaEl = doc.createElement("factura");
             facturaEl.setAttribute("id", "comprobante");
-            facturaEl.setAttribute("version", "2.0.0");
+            facturaEl.setAttribute("version", "1.0.0");
             doc.appendChild(facturaEl);
 
+            // 1. InfoTributaria
             Element infoTrib = doc.createElement("infoTributaria");
             facturaEl.appendChild(infoTrib);
 
+            infoTrib.appendChild(add(doc, "ambiente", factura.getEmpresa().getAmbiente()));
+            infoTrib.appendChild(add(doc, "tipoEmision", "1"));
             infoTrib.appendChild(add(doc, "razonSocial", factura.getEmpresa().getRazonSocial()));
-            infoTrib.appendChild(add(doc, "nombreComercial", factura.getEmpresa().getNombreComercial()));
+            addOptional(doc, infoTrib, "nombreComercial", factura.getEmpresa().getNombreComercial());
             infoTrib.appendChild(add(doc, "ruc", factura.getEmpresa().getRuc()));
             infoTrib.appendChild(add(doc, "claveAcceso", factura.getClaveAcceso()));
             infoTrib.appendChild(add(doc, "codDoc", "01"));
@@ -182,45 +186,258 @@ public class FacturaServicio {
             infoTrib.appendChild(add(doc, "secuencial", factura.getSecuencial()));
             infoTrib.appendChild(add(doc, "dirMatriz", factura.getEmpresa().getDirEstablecimiento()));
 
+            // 2. InfoFactura
             Element infoFac = doc.createElement("infoFactura");
             facturaEl.appendChild(infoFac);
 
             infoFac.appendChild(add(doc, "fechaEmision",
                     factura.getFechaEmision().toLocalDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))));
-            infoFac.appendChild(add(doc, "razonSocialComprador", factura.getCliente().getClienteNombre()));
-            infoFac.appendChild(add(doc, "identificacionComprador", factura.getCliente().getClienteTelefono()));
-            infoFac.appendChild(add(doc, "totalSinImpuestos", factura.getSubtotal12() + factura.getSubtotal0()));
-            infoFac.appendChild(add(doc, "importeTotal", factura.getTotalFactura()));
+            addOptional(doc, infoFac, "dirEstablecimiento", factura.getEmpresa().getDirEstablecimiento());
+            addOptional(doc, infoFac, "contribuyenteEspecial", factura.getEmpresa().getContribuyenteEspecial());
+            infoFac.appendChild(add(doc, "obligadoContabilidad",
+                    factura.getEmpresa().getObligadoContabilidad() != null
+                            ? factura.getEmpresa().getObligadoContabilidad()
+                            : "NO"));
 
+            String ident = factura.getCliente().getIdentificacion();
+            String tipoIdent = getTipoIdentificacion(ident);
+
+            infoFac.appendChild(add(doc, "tipoIdentificacionComprador", tipoIdent));
+            addOptional(doc, infoFac, "guiaRemision", null); // Placeholder si existiera
+            infoFac.appendChild(add(doc, "razonSocialComprador",
+                    factura.getCliente().getClienteNombre() + " " + factura.getCliente().getClienteApellido()));
+            infoFac.appendChild(add(doc, "identificacionComprador", ident));
+            addOptional(doc, infoFac, "direccionComprador", factura.getCliente().getClienteDireccion());
+
+            infoFac.appendChild(add(doc, "totalSinImpuestos",
+                    String.format(java.util.Locale.US, "%.2f", factura.getSubtotal12() + factura.getSubtotal0()
+                            + factura.getSubtotalNoObjeto() + factura.getSubtotalExento())));
+            infoFac.appendChild(
+                    add(doc, "totalDescuento",
+                            String.format(java.util.Locale.US, "%.2f", factura.getTotalDescuento())));
+
+            // Bloque TotalConImpuestos
+            Element totalConImpuestos = doc.createElement("totalConImpuestos");
+            infoFac.appendChild(totalConImpuestos);
+
+            // Determinar Tasa de IVA (12% vs 15%)
+            String codigoPorcentajeIva = "4"; // Default 15% (Code 4)
+            String tarifaIva = "15";
+            if (factura.getSubtotal12() > 0 && factura.getTotalIva() > 0) {
+                double tasaCalculada = factura.getTotalIva() / factura.getSubtotal12();
+                if (Math.abs(tasaCalculada - 0.12) < 0.01) {
+                    codigoPorcentajeIva = "2"; // 12%
+                    tarifaIva = "12";
+                } else if (Math.abs(tasaCalculada - 0.15) < 0.01) {
+                    codigoPorcentajeIva = "4"; // 15%
+                    tarifaIva = "15";
+                } else if (Math.abs(tasaCalculada - 0.13) < 0.01) {
+                    codigoPorcentajeIva = "10"; // 13% IVA Diferenciado
+                    tarifaIva = "13";
+                } else if (Math.abs(tasaCalculada - 0.05) < 0.01) {
+                    codigoPorcentajeIva = "5"; // 5% Materiales Construcción
+                    tarifaIva = "5";
+                }
+            }
+
+            // IVA General (usando subtotal12 como base gravada general)
+            if (factura.getSubtotal12() > 0) {
+                totalConImpuestos.appendChild(crearTotalImpuesto(doc, "2", codigoPorcentajeIva, factura.getSubtotal12(),
+                        factura.getTotalIva()));
+            }
+            // IVA 0%
+            if (factura.getSubtotal0() > 0) {
+                totalConImpuestos.appendChild(crearTotalImpuesto(doc, "2", "0", factura.getSubtotal0(), 0.0));
+            }
+            // IVA No Objeto (6)
+            if (factura.getSubtotalNoObjeto() > 0) {
+                totalConImpuestos.appendChild(crearTotalImpuesto(doc, "2", "6", factura.getSubtotalNoObjeto(), 0.0));
+            }
+            // IVA Exento (7)
+            if (factura.getSubtotalExento() > 0) {
+                totalConImpuestos.appendChild(crearTotalImpuesto(doc, "2", "7", factura.getSubtotalExento(), 0.0));
+            }
+
+            infoFac.appendChild(add(doc, "propina", "0.00"));
+            infoFac.appendChild(
+                    add(doc, "importeTotal", String.format(java.util.Locale.US, "%.2f", factura.getTotalFactura())));
+            infoFac.appendChild(add(doc, "moneda", "DOLAR"));
+
+            // Pagos
+            Element pagos = doc.createElement("pagos");
+            infoFac.appendChild(pagos);
+
+            List<FacturaPago> listaPagos = facturaPagoRepository.findByFactura(factura);
+            if (listaPagos != null && !listaPagos.isEmpty()) {
+                for (FacturaPago fp : listaPagos) {
+                    Element pago = doc.createElement("pago");
+                    String codigoFormaPago = fp.getFormaPago() != null && fp.getFormaPago().getCodigoSri() != null
+                            ? fp.getFormaPago().getCodigoSri()
+                            : "01";
+
+                    pago.appendChild(add(doc, "formaPago", codigoFormaPago));
+                    pago.appendChild(add(doc, "total", String.format(java.util.Locale.US, "%.2f", fp.getTotal())));
+                    if (!"01".equals(codigoFormaPago)) {
+                        pago.appendChild(
+                                add(doc, "plazo", fp.getPlazo() != null ? String.valueOf(fp.getPlazo()) : "0"));
+                        pago.appendChild(
+                                add(doc, "unidadTiempo", fp.getUnidadTiempo() != null ? fp.getUnidadTiempo() : "dias"));
+                    }
+                    pagos.appendChild(pago);
+                }
+            } else {
+                Element pago = doc.createElement("pago");
+                pago.appendChild(add(doc, "formaPago", "01")); // Efectivo
+                pago.appendChild(
+                        add(doc, "total", String.format(java.util.Locale.US, "%.2f", factura.getTotalFactura())));
+                pagos.appendChild(pago);
+            }
+
+            // 3. Detalles
             Element detallesEl = doc.createElement("detalles");
             facturaEl.appendChild(detallesEl);
 
-            factura.getDetalles().forEach(det -> {
+            for (DetalleFactura det : factura.getDetalles()) {
                 Element d = doc.createElement("detalle");
+                String codigoPrincipal = det.getProducto().getProductoSerial();
+                if (codigoPrincipal == null || codigoPrincipal.isEmpty()) {
+                    codigoPrincipal = String.valueOf(det.getProducto().getProductoId());
+                }
+
+                d.appendChild(add(doc, "codigoPrincipal", codigoPrincipal));
+                addOptional(doc, d, "codigoAuxiliar", det.getProducto().getProductoId());
                 d.appendChild(add(doc, "descripcion", det.getProducto().getProductoNombre()));
-                d.appendChild(add(doc, "cantidad", det.getCantidad()));
-                d.appendChild(add(doc, "precioUnitario", det.getPrecioUnitario()));
-                d.appendChild(add(doc, "descuento", det.getDescuento()));
-                d.appendChild(add(doc, "precioTotalSinImpuesto", det.getSubtotal()));
+                d.appendChild(
+                        add(doc, "cantidad", String.format(java.util.Locale.US, "%.2f", (double) det.getCantidad())));
+                d.appendChild(add(doc, "precioUnitario",
+                        String.format(java.util.Locale.US, "%.2f", det.getPrecioUnitario())));
+                d.appendChild(add(doc, "descuento", String.format(java.util.Locale.US, "%.2f", det.getDescuento())));
+                d.appendChild(add(doc, "precioTotalSinImpuesto",
+                        String.format(java.util.Locale.US, "%.2f", det.getSubtotal())));
+
+                Element impuestosDet = doc.createElement("impuestos");
+                d.appendChild(impuestosDet);
+
+                List<ImpuestoDetalle> impDetalles = impuestoRepository.findByDetalleFactura(det);
+
+                if (impDetalles != null && !impDetalles.isEmpty()) {
+                    for (ImpuestoDetalle imp : impDetalles) {
+                        Element impuesto = doc.createElement("impuesto");
+                        impuesto.appendChild(add(doc, "codigo", imp.getCodigo()));
+                        impuesto.appendChild(add(doc, "codigoPorcentaje", imp.getCodigoPorcentaje()));
+                        impuesto.appendChild(add(doc, "tarifa", imp.getTarifa()));
+                        impuesto.appendChild(add(doc, "baseImponible",
+                                String.format(java.util.Locale.US, "%.2f", imp.getBaseImponible())));
+                        impuesto.appendChild(
+                                add(doc, "valor", String.format(java.util.Locale.US, "%.2f", imp.getValor())));
+                        impuestosDet.appendChild(impuesto);
+                    }
+                } else {
+                    // Fallback logic
+                    Element impuesto = doc.createElement("impuesto");
+                    impuesto.appendChild(add(doc, "codigo", "2")); // IVA
+
+                    // Usar la misma lógica de tasa que arriba
+                    boolean tieneIva = det.getSubtotal() > 0
+                            && (det.getProducto().getProductoTasa() != null && det.getProducto().getProductoTasa() > 0);
+
+                    if (tieneIva) {
+                        impuesto.appendChild(add(doc, "codigoPorcentaje", codigoPorcentajeIva));
+                        impuesto.appendChild(add(doc, "tarifa", tarifaIva));
+                        double valIva = det.getSubtotal() * (Double.parseDouble(tarifaIva) / 100.0);
+                        impuesto.appendChild(add(doc, "baseImponible",
+                                String.format(java.util.Locale.US, "%.2f", det.getSubtotal())));
+                        impuesto.appendChild(add(doc, "valor", String.format(java.util.Locale.US, "%.2f", valIva)));
+                    } else {
+                        impuesto.appendChild(add(doc, "codigoPorcentaje", "0"));
+                        impuesto.appendChild(add(doc, "tarifa", "0"));
+                        impuesto.appendChild(add(doc, "baseImponible",
+                                String.format(java.util.Locale.US, "%.2f", det.getSubtotal())));
+                        impuesto.appendChild(add(doc, "valor", "0.00"));
+                    }
+                    impuestosDet.appendChild(impuesto);
+                }
                 detallesEl.appendChild(d);
-            });
+            }
+
+            // 4. Info Adicional
+            Element infoAdicional = doc.createElement("infoAdicional");
+            boolean tieneInfo = false;
+
+            if (factura.getCliente().getClienteEmail() != null && !factura.getCliente().getClienteEmail().isEmpty()) {
+                infoAdicional.appendChild(crearCampoAdicional(doc, "Email", factura.getCliente().getClienteEmail()));
+                tieneInfo = true;
+            }
+            if (factura.getCliente().getClienteTelefono() != null
+                    && !factura.getCliente().getClienteTelefono().isEmpty()) {
+                infoAdicional
+                        .appendChild(crearCampoAdicional(doc, "Telefono", factura.getCliente().getClienteTelefono()));
+                tieneInfo = true;
+            }
+            // Agregamos Dirección aquí si existe, ya que es común ponerla en infoAdicional
+            // si no se usa el campo estricto xml 1.0.0
+            // Pero según manual 1.0.0, direccionComprador va en infoFactura. Lo hemos
+            // puesto arriba.
+            // Dejamos esto como extra info si se desea.
+
+            if (tieneInfo) {
+                facturaEl.appendChild(infoAdicional);
+            }
+
             File carpeta = new File("C:\\facturaSRI");
             if (!carpeta.exists())
                 carpeta.mkdirs();
             String ruta = "C:\\facturaSRI\\factura_" + factura.getSecuencial() + ".xml";
             Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            transformer.setOutputProperty(javax.xml.transform.OutputKeys.INDENT, "yes");
             transformer.transform(new DOMSource(doc), new StreamResult(new File(ruta)));
             return ruta;
 
         } catch (Exception e) {
+            e.printStackTrace();
             throw new RuntimeException("Error al generar XML: " + e.getMessage());
         }
     }
 
+    private Element crearTotalImpuesto(Document doc, String codigo, String codigoPorcentaje, Double base,
+            Double valor) {
+        Element totalImpuesto = doc.createElement("totalImpuesto");
+        totalImpuesto.appendChild(add(doc, "codigo", codigo));
+        totalImpuesto.appendChild(add(doc, "codigoPorcentaje", codigoPorcentaje));
+        totalImpuesto.appendChild(add(doc, "baseImponible", String.format("%.2f", base).replace(",", ".")));
+        totalImpuesto.appendChild(add(doc, "valor", String.format("%.2f", valor).replace(",", ".")));
+        return totalImpuesto;
+    }
+
+    private Element crearCampoAdicional(Document doc, String nombre, String valor) {
+        Element campo = doc.createElement("campoAdicional");
+        campo.setAttribute("nombre", nombre);
+        campo.appendChild(doc.createTextNode(valor));
+        return campo;
+    }
+
+    private String getTipoIdentificacion(String identificacion) {
+        if (identificacion == null)
+            return "07"; // Consumidor Final
+        if (identificacion.equals("9999999999999"))
+            return "07";
+        if (identificacion.length() == 10)
+            return "05"; // Cédula
+        if (identificacion.length() == 13)
+            return "04"; // RUC
+        return "06"; // Pasaporte / Otros
+    }
+
     private Element add(Document doc, String tag, Object value) {
         Element e = doc.createElement(tag);
-        e.appendChild(doc.createTextNode(String.valueOf(value)));
+        e.appendChild(doc.createTextNode(value != null ? String.valueOf(value) : ""));
         return e;
+    }
+
+    private void addOptional(Document doc, Element parent, String tagName, Object value) {
+        if (value != null && !String.valueOf(value).trim().isEmpty()) {
+            parent.appendChild(add(doc, tagName, value));
+        }
     }
 
     public Factura buscarPorId(Long id) {
@@ -236,14 +453,24 @@ public class FacturaServicio {
     }
 
     @Transactional
-    public void eliminarFactura(Long id) {
+    public void anularFactura(Long id) {
         Factura factura = facturaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Factura no encontrada"));
 
-        // 1. Eliminar pagos asociados (No tienen CascadeType.ALL en Entidad Factura)
-        facturaPagoRepository.deleteByFacturaFacturaId(id);
+        // No eliminamos, cambiamos estado a ANULADA (4)
+        // 4 = ANULADA
+        factura.setEstado(4);
+        factura.setEstadoSri("ANULADA");
+        factura.setMensajeSri("Factura anulada por el usuario");
 
-        // 2. Eliminar Factura (Detalles se eliminan por CascadeType.ALL)
-        facturaRepository.delete(factura);
+        // Devolver stock
+        for (DetalleFactura det : factura.getDetalles()) {
+            Producto p = det.getProducto();
+            p.setProductoStock(p.getProductoStock() + det.getCantidad().intValue());
+            productoRepository.save(p);
+        }
+
+        facturaRepository.save(factura);
     }
+
 }

@@ -13,6 +13,6 @@ public class FormaPago {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long formaPagoId;
 
-    private String nombre;     
-    private String codigoSri;  
+    private String nombre;
+    private String codigoSri;
 }

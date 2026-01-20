@@ -1,19 +1,265 @@
+/* Dark Mode Variables - Modern Color Palette */
 :root {
-  --primary-color: #4f46e5;
-  /* Indigo 600 */
-  --primary-hover: #4338ca;
-  /* Indigo 700 */
-  --bg-color: #f1f5f9;
-  /* Slate 100 */
+  --bg-color: #f8fafc;
+  /* Slate 50 */
   --card-bg: #ffffff;
-  --text-main: #1e293b;
-  /* Slate 800 */
+  /* White */
+  --text-main: #0f172a;
+  /* Slate 900 */
   --text-muted: #64748b;
   /* Slate 500 */
   --border-color: #e2e8f0;
   /* Slate 200 */
-  --success-color: #10b981;
-  --error-color: #ef4444;
+  --primary-color: #4f46e5;
+  /* Indigo 600 */
+  --primary-hover: #4338ca;
+  /* Indigo 700 */
+  --sidebar-bg: #1e1b4b;
+  /* Indigo 950 (Original Sidebar) */
+  --sidebar-text: #ffffff;
+  --sidebar-text-muted: #94a3b8;
+  --input-bg: #ffffff;
+  --input-border: #cbd5e1;
+}
+
+/* Dark Mode Variables */
+body.dark-mode {
+  --bg-color: #0f172a;
+  /* Slate 900 */
+  --card-bg: #1e293b;
+  /* Slate 800 */
+  --text-main: #f8fafc;
+  /* Slate 50 */
+  --text-muted: #94a3b8;
+  /* Slate 400 */
+  --border-color: #334155;
+  /* Slate 700 */
+  --primary-color: #6366f1;
+  /* Indigo 500 */
+  --primary-hover: #818cf8;
+  /* Indigo 400 */
+  --sidebar-bg: #020617;
+  /* Slate 950 (Darker for dark mode) */
+  --sidebar-text: #e2e8f0;
+  --sidebar-text-muted: #64748b;
+  --input-bg: #1e293b;
+  /* Slate 800 */
+  --input-border: #475569;
+  /* Slate 600 */
+}
+
+/* Dark Mode Specific Overrides */
+body.dark-mode .card-premium,
+body.dark-mode .table-modern,
+body.dark-mode .stat-card,
+body.dark-mode .sidebar {
+  background: var(--card-bg);
+  border-color: var(--border-color);
+  color: var(--text-main);
+}
+
+body.dark-mode .page-title,
+body.dark-mode .section-title,
+body.dark-mode .finance-value,
+body.dark-mode .product-name {
+  color: var(--text-main);
+}
+
+body.dark-mode .table-modern th {
+  background: #1e293b;
+  /* Match card bg or slightly lighter */
+  color: var(--text-muted);
+  border-bottom-color: var(--border-color);
+}
+
+body.dark-mode .table-modern td {
+  border-bottom-color: var(--border-color);
+  color: var(--text-main);
+}
+
+body.dark-mode .table-modern tr:hover td {
+  background: #334155 !important;
+}
+
+body.dark-mode .sidebar-header,
+body.dark-mode .sidebar-footer {
+  border-color: var(--border-color);
+}
+
+body.dark-mode .nav-item {
+  color: var(--text-muted);
+}
+
+body.dark-mode .nav-item:hover,
+body.dark-mode .nav-item.active {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+
+body.dark-mode .form-control {
+  background: #0f172a;
+  border-color: var(--border-color);
+  color: var(--text-main);
+}
+
+body.dark-mode .form-control:focus {
+  border-color: var(--primary-color);
+}
+
+body.dark-mode .badge-neutral {
+  background: #334155;
+  color: #cbd5e1;
+}
+
+/* Dark Mode Badge Overrides (Desaturated) */
+body.dark-mode .badge-success {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  /* Emerald 400 */
+}
+
+body.dark-mode .badge-danger {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  /* Red 400 */
+}
+
+body.dark-mode .badge-warning {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  /* Amber 400 */
+}
+
+body.dark-mode .badge-info {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  /* Blue 400 */
+}
+
+/* Dark Mode Button Overrides */
+body.dark-mode .btn-secondary {
+  background: #1e293b;
+  border-color: #475569;
+  color: #e2e8f0;
+}
+
+body.dark-mode .btn-secondary:hover {
+  background: #334155;
+  border-color: #64748b;
+}
+
+/* Force Table Text Contrast */
+body.dark-mode .table-modern td,
+body.dark-mode .table-modern td b,
+body.dark-mode .table-modern td strong,
+body.dark-mode .table-modern td span:not(.badge) {
+  color: var(--text-main);
+}
+
+body.dark-mode .table-modern td span.text-muted {
+  color: var(--text-muted);
+}
+
+
+/* --- DARK MODE STANDARDIZATION & RESET --- */
+
+/* 1. Force Text Color on ALL elements in Dark Mode */
+body.dark-mode,
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode h5,
+body.dark-mode h6,
+body.dark-mode p,
+body.dark-mode span,
+body.dark-mode div,
+body.dark-mode li,
+body.dark-mode b,
+body.dark-mode strong,
+body.dark-mode label,
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea,
+body.dark-mode .form-control,
+body.dark-mode .form-label,
+body.dark-mode .input-icon-wrapper i,
+body.dark-mode td,
+body.dark-mode th {
+  color: var(--text-main);
+}
+
+/* 2. Override Bootstrap/Tailwind-like Utility Classes */
+body.dark-mode .text-dark,
+body.dark-mode .text-black,
+body.dark-mode .text-secondary {
+  color: var(--text-main) !important;
+}
+
+body.dark-mode .text-muted,
+body.dark-mode .text-gray {
+  color: var(--text-muted) !important;
+}
+
+body.dark-mode .bg-white,
+body.dark-mode .bg-light {
+  background-color: var(--card-bg) !important;
+  color: var(--text-main) !important;
+}
+
+/* 3. Component Specific Fixes */
+body.dark-mode .card,
+body.dark-mode .modal-content,
+body.dark-mode .dropdown-menu {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+  color: var(--text-main);
+}
+
+body.dark-mode .form-control,
+body.dark-mode .form-control-lg,
+body.dark-mode .form-select {
+  background-color: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--text-main);
+}
+
+body.dark-mode .form-control:focus,
+body.dark-mode .form-control-lg:focus,
+body.dark-mode .form-select:focus {
+  background-color: var(--input-bg);
+  border-color: var(--primary-color);
+  color: var(--text-main);
+}
+
+/* Fix Modals & SweetAlert */
+body.dark-mode .modal-content,
+body.dark-mode .swal2-popup {
+  background-color: var(--card-bg) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-color);
+}
+
+body.dark-mode .swal2-title,
+body.dark-mode .swal2-content,
+body.dark-mode .swal2-html-container {
+  color: var(--text-main) !important;
+}
+
+/* Fix "Subtitles" specifically */
+body.dark-mode .subtitle,
+body.dark-mode .page-subtitle,
+body.dark-mode .label {
+  color: var(--text-muted) !important;
+}
+
+body.dark-mode .text-muted,
+body.dark-mode .nav-label {
+  color: var(--text-muted) !important;
+}
+
+body.dark-mode .form-control::placeholder {
+  color: var(--text-muted);
 }
 
 body {

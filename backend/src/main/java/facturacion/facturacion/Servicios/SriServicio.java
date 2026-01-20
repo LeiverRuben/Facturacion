@@ -110,16 +110,29 @@ public class SriServicio {
             Matcher mMsg = pMensaje.matcher(xmlResponse);
             Matcher mInfo = pInfo.matcher(xmlResponse);
 
-            StringBuilder sb = new StringBuilder();
+            boolean esErrorEstructura = false;
+            StringBuilder sbMsg = new StringBuilder();
+            StringBuilder sbInfo = new StringBuilder();
 
             while (mMsg.find()) {
-                sb.append(mMsg.group(1)).append("; ");
+                String msg = mMsg.group(1);
+                if (msg.contains("ARCHIVO NO CUMPLE ESTRUCTURA XML")) {
+                    esErrorEstructura = true;
+                }
+                sbMsg.append(msg).append("; ");
             }
-            if (mInfo.find()) {
-                sb.append("Detalle: ").append(mInfo.group(1));
+            while (mInfo.find()) {
+                sbInfo.append(mInfo.group(1)).append("; ");
             }
 
-            String resultado = sb.toString();
+            // Si es un "falso" error de estructura (tiene detalle de datos), mostramos solo
+            // el detalle
+            if (esErrorEstructura && sbInfo.length() > 0) {
+                return "Error de Datos: " + sbInfo.toString();
+            }
+
+            // Si no, devolvemos todo
+            String resultado = sbMsg.toString() + (sbInfo.length() > 0 ? " Detalle: " + sbInfo.toString() : "");
             return resultado.isEmpty() ? "Respuesta XML sin mensajes claros de error." : resultado;
         } catch (Exception e) {
             return "Error parseando respuesta SRI";

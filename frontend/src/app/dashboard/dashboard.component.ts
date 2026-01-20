@@ -8,6 +8,7 @@ interface DashboardStats {
   totalClientes: number;
   totalProductos: number;
   totalFacturas: number;
+  ventasUltimaSemana?: { dia: string; total: number }[];
 }
 
 @Component({
@@ -136,7 +137,7 @@ interface DashboardStats {
                     <!-- Gráfico CSS Simple -->
                     <div class="chart-container">
                         <div *ngFor="let d of diasSemana" class="chart-bar-wrapper">
-                            <div class="chart-bar" [style.height.%]="d.valor"></div>
+                            <div class="chart-bar" [style.height.%]="d.height" [title]="d.valor | currency:'USD'"></div>
                             <span class="chart-label">{{ d.dia }}</span>
                         </div>
                     </div>
@@ -181,14 +182,14 @@ interface DashboardStats {
     }
 
     .stat-card {
-      background: white;
+      background: var(--card-bg);
       border-radius: 16px;
       padding: 1.5rem;
       display: flex;
       align-items: center;
       gap: 1.5rem;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-      border: 1px solid #f1f5f9;
+      border: 1px solid var(--border-color);
       transition: transform 0.2s;
     }
 
@@ -209,8 +210,8 @@ interface DashboardStats {
     .stat-card.purple .stat-icon { background: #f5f3ff; color: #8b5cf6; }
 
     .stat-info { display: flex; flex-direction: column; }
-    .stat-info .label { color: #64748b; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-    .stat-info .value { color: #1e293b; font-size: 1.8rem; font-weight: 800; line-height: 1.1; margin-top: 4px; }
+    .stat-info .label { color: var(--text-muted); font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-info .value { color: var(--text-main); font-size: 1.8rem; font-weight: 800; line-height: 1.1; margin-top: 4px; }
 
 
     /* MAIN GRID LAYOUT */
@@ -230,7 +231,7 @@ interface DashboardStats {
     .section-title {
         font-size: 1.1rem;
         font-weight: 700;
-        color: #334155;
+        color: var(--text-main);
         margin: 0;
         display: flex;
         align-items: center;
@@ -245,10 +246,10 @@ interface DashboardStats {
     }
 
     .card-premium {
-        background: white;
+        background: var(--card-bg);
         border-radius: 16px;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        border: 1px solid #f1f5f9;
+        border: 1px solid var(--border-color);
         overflow: hidden;
     }
 
@@ -256,20 +257,20 @@ interface DashboardStats {
 
     /* Tables */
     .table-modern { width: 100%; border-collapse: collapse; }
-    .table-modern th { background: #f8fafc; color: #64748b; font-weight: 600; font-size: 0.85rem; padding: 1rem; text-align: left; }
-    .table-modern td { padding: 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; font-size: 0.95rem; }
+    .table-modern th { background: var(--bg-color); color: var(--text-muted); font-weight: 600; font-size: 0.85rem; padding: 1rem; text-align: left; }
+    .table-modern td { padding: 1rem; border-bottom: 1px solid var(--border-color); color: var(--text-main); font-size: 0.95rem; }
     .table-modern tr:last-child td { border-bottom: none; }
     
-    .badge-neutral { background: #f1f5f9; color: #475569; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; }
+    .badge-neutral { background: var(--bg-color); color: var(--text-muted); padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; }
     .text-right { text-align: right; }
     .text-center { text-align: center; }
     .fw-bold { font-weight: 600; }
-    .text-muted { color: #94a3b8 !important; }
+    .text-muted { color: var(--text-muted) !important; }
 
     /* Stock Alerts */
     .stock-grid { display: flex; flex-direction: column; gap: 0.8rem; }
     .stock-card-mini {
-        background: white;
+        background: var(--card-bg);
         border: 1px solid #fee2e2;
         border-left: 4px solid #ef4444;
         border-radius: 8px;
@@ -279,15 +280,105 @@ interface DashboardStats {
         align-items: center;
     }
     .stock-info { display: flex; flex-direction: column; }
-    .product-name { font-weight: 600; color: #1e293b; }
-    .product-sku { font-size: 0.8rem; color: #64748b; }
+    .product-name { font-weight: 600; color: var(--text-main); }
+    .product-sku { font-size: 0.8rem; color: var(--text-muted); }
+
+    .stat-card:hover { transform: translateY(-3px); }
+
+    .stat-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+    }
+
+    .stat-card.blue .stat-icon { background: #eff6ff; color: #3b82f6; }
+    .stat-card.green .stat-icon { background: #f0fdf4; color: #22c55e; }
+    .stat-card.purple .stat-icon { background: #f5f3ff; color: #8b5cf6; }
+
+    .stat-info { display: flex; flex-direction: column; }
+    .stat-info .label { color: #64748b; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-info .value { color: var(--text-main); font-size: 1.8rem; font-weight: 800; line-height: 1.1; margin-top: 4px; }
+
+
+    /* MAIN GRID LAYOUT */
+    .dashboard-main-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 2rem;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-link {
+        color: var(--primary-color);
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .card-premium {
+        background: var(--card-bg);
+        border-radius: 16px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+    }
+
+    .card-premium.no-padding { padding: 0; }
+
+    /* Tables */
+    .table-modern { width: 100%; border-collapse: collapse; }
+    .table-modern th { background: var(--bg-color); color: var(--text-muted); font-weight: 600; font-size: 0.85rem; padding: 1rem; text-align: left; }
+    .table-modern td { padding: 1rem; border-bottom: 1px solid var(--border-color); color: var(--text-main); font-size: 0.95rem; }
+    .table-modern tr:last-child td { border-bottom: none; }
+    
+    .badge-neutral { background: var(--bg-color); color: var(--text-muted); padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; }
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+    .fw-bold { font-weight: 600; }
+    .text-muted { color: var(--text-muted) !important; }
+
+    /* Stock Alerts */
+    .stock-grid { display: flex; flex-direction: column; gap: 0.8rem; }
+    .stock-card-mini {
+        background: var(--card-bg);
+        border: 1px solid #fee2e2;
+        border-left: 4px solid #ef4444;
+        border-radius: 8px;
+        padding: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .stock-info { display: flex; flex-direction: column; }
+    .product-name { font-weight: 600; color: var(--text-main); }
+    .product-sku { font-size: 0.8rem; color: var(--text-muted); }
     .stock-badge { background: #fef2f2; color: #ef4444; padding: 4px 10px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; }
 
     /* Financial Chart Widget */
-    .finance-card { padding: 1.5rem; background: linear-gradient(to bottom, #ffffff, #f8fafc); }
+    .finance-card { padding: 1.5rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; }
     .finance-header { text-align: center; margin-bottom: 2rem; }
-    .finance-label { color: #64748b; font-size: 0.9rem; font-weight: 500; display: block; }
-    .finance-value { font-size: 2.5rem; font-weight: 800; color: #1e293b; margin: 0.5rem 0; }
+    .finance-label { color: var(--text-muted); font-size: 0.9rem; font-weight: 500; display: block; }
+    .finance-value { font-size: 2.5rem; font-weight: 800; color: var(--text-main); margin: 0.5rem 0; }
     .finance-trend { font-size: 0.9rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
     .finance-trend.positive { color: #16a34a; background: #dcfce7; padding: 4px 12px; border-radius: 20px; }
 
@@ -307,18 +398,22 @@ interface DashboardStats {
     }
     .chart-bar {
         width: 8px;
-        background: #e2e8f0;
+        background: var(--primary-color);
         border-radius: 10px;
         transition: height 1s ease-out, background 0.2s;
         min-height: 10%;
+        opacity: 0.8;
     }
-    .chart-bar:hover { background: var(--primary-color); transform: scaleX(1.5); }
-    .chart-label { font-size: 0.75rem; color: #94a3b8; font-weight: 600; }
+    .chart-bar:hover { opacity: 1; transform: scaleX(1.5); }
+    .chart-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
 
     /* Responsive */
     @media (max-width: 1024px) {
         .dashboard-main-grid { grid-template-columns: 1fr; }
     }
+
+
+
   `]
 })
 export class DashboardComponent implements OnInit {
@@ -343,46 +438,42 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit() {
     this.loadStats();
-    this.generarDatosGrafico();
   }
 
   loadStats() {
-    // 1. Clientes
-    this.http.get<any[]>(`${this.apiUrl}/api/cliente`).subscribe(clientes => {
-      this.stats.totalClientes = clientes.length;
+    this.http.get<any>(`${this.apiUrl}/api/dashboard/stats`).subscribe(data => {
+      // 1. Stats Generales
+      this.stats = {
+        totalClientes: data.totalClientes,
+        totalProductos: data.totalProductos,
+        totalFacturas: data.totalFacturas
+      };
+
+      // 2. Ingresos y Facturas
+      this.ingresosSemanales = data.ventasSemana; // Ahora viene directo del backend
+      this.ultimasFacturas = data.ultimasFacturas;
+
+      // 3. Procesar Gráfico Real
+      if (data.ventasUltimaSemana && Array.isArray(data.ventasUltimaSemana)) {
+        // Encontrar valor máximo para escalar la altura (0 - 100%)
+        const maxVal = Math.max(...data.ventasUltimaSemana.map((d: any) => d.total));
+
+        this.diasSemana = data.ventasUltimaSemana.map((d: any) => ({
+          dia: d.dia,
+          valor: d.total,
+          height: maxVal > 0 ? (d.total / maxVal) * 100 : 5 // Mínimo 5% visual si es 0 pero otros tienen datos
+        }));
+      }
     });
 
-    // 2. Productos & Stock Bajo
+    // 3. Productos Bajo Stock (Mantenemos la llamada separada o la integramos si el DTO la trae)
+    // Por ahora la mantengo separada para no romper esa parte si no la puse en el DTO completo
     this.http.get<any[]>(`${this.apiUrl}/api/productos`).subscribe(productos => {
-      this.stats.totalProductos = productos.length;
-      // Filtrar productos con stock menor a 10
       this.productosBajoStock = productos
         .filter(p => (p.productoStock || 0) < 10)
-        .slice(0, 5); // Solo mostrar top 5
-    });
-
-    // 3. Facturas, Últimas Transacciones & Ingresos
-    this.http.get<any[]>(`${this.apiUrl}/api/facturas`).subscribe(facturas => {
-      this.stats.totalFacturas = facturas.length;
-
-      // Ordenar por fecha (descendente) - Asumiendo que tienen fechaEmision o id auto-inc
-      // Si no hay fecha, usamos ID como proxy de "reciente"
-      this.ultimasFacturas = facturas
-        .sort((a, b) => b.facturaId - a.facturaId)
         .slice(0, 5);
-
-      // Calcular Ingresos Totales (Simple: Suma de total)
-      // En un caso real, filtraríamos por fechaSemana
-      this.ingresosSemanales = facturas.reduce((acc, f) => acc + (f.facturaTotal || 0), 0);
     });
   }
 
-  generarDatosGrafico() {
-    // Generar 7 días dummy para el gráfico visual
-    const dias = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-    this.diasSemana = dias.map(d => ({
-      dia: d,
-      valor: Math.floor(Math.random() * 100) // Simulado por ahora hasta tener fechas reales
-    }));
-  }
+
 }

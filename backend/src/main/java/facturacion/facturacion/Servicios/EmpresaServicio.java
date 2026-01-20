@@ -33,6 +33,10 @@ public class EmpresaServicio {
             throw new RuntimeException("Ya existe una empresa con ese RUC.");
         }
 
+        if (!facturacion.facturacion.Util.ValidadorEcuador.validarRuc(dto.getRuc())) {
+            throw new RuntimeException("El RUC ingresado no es válido (Algoritmo SRI).");
+        }
+
         Empresa e = new Empresa();
         copiarDatos(dto, e);
 
@@ -41,6 +45,11 @@ public class EmpresaServicio {
 
     // ACTUALIZAR
     public Empresa actualizar(Long id, EmpresaDTO dto) {
+
+        if (!facturacion.facturacion.Util.ValidadorEcuador.validarRuc(dto.getRuc())) {
+            throw new RuntimeException("El RUC ingresado no es válido (Algoritmo SRI).");
+        }
+
         Empresa existente = obtener(id);
         copiarDatos(dto, existente);
         return empresaRepository.save(existente);
