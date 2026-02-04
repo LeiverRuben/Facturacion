@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import Swal from 'sweetalert2';
 
 interface Proveedor {
     id?: number;
@@ -50,8 +51,8 @@ export class ProveedoresComponent implements OnInit {
     }
 
     guardarProveedor(): void {
-        if (!this.nuevoProveedor.razonSocial || !this.nuevoProveedor.ruc) {
-            this.mostrarMensaje('Razón Social y RUC son obligatorios', 'error');
+        if (!this.nuevoProveedor.razonSocial || !this.nuevoProveedor.ruc || !this.nuevoProveedor.email) {
+            Swal.fire('Error', 'Razón Social, RUC y Email son obligatorios', 'warning');
             return;
         }
 
@@ -61,11 +62,11 @@ export class ProveedoresComponent implements OnInit {
 
         request.subscribe({
             next: () => {
-                this.mostrarMensaje(this.editando ? 'Proveedor actualizado' : 'Proveedor creado', 'success');
+                Swal.fire('Guardado', this.editando ? 'Proveedor actualizado' : 'Proveedor creado', 'success');
                 this.cargarProveedores();
                 this.cancelarEdicion();
             },
-            error: (e) => this.mostrarMensaje('Error al guardar proveedor', 'error')
+            error: (e) => Swal.fire('Error', 'Error al guardar proveedor', 'error')
         });
     }
 

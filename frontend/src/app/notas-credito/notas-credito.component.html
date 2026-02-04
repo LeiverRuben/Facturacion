@@ -1,0 +1,68 @@
+<div class="container-fluid fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Notas de Crédito</h2>
+        <a routerLink="/notas-credito/crear" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nueva Nota Crédito
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Secuencial</th>
+                            <th>Fecha</th>
+                            <th>Cliente</th>
+                            <th>Factura Modif.</th>
+                            <th>Total</th>
+                            <th>Estado SRI</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let nc of notas">
+                            <td class="fw-bold text-primary">{{ nc.secuencial }}</td>
+                            <td>{{ nc.fechaEmision | date:'dd/MM/yyyy HH:mm' }}</td>
+                            <td>
+                                {{ nc.cliente?.clienteNombre }} {{ nc.cliente?.clienteApellido }}<br>
+                                <small class="text-muted">{{ nc.cliente?.identificacion }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ nc.facturaModificada?.secuencial }}</span>
+                            </td>
+                            <td class="fw-bold">${{ nc.total | number:'1.2-2' }}</td>
+                            <td>
+                                <span class="badge" [ngClass]="{
+                      'bg-success': nc.estadoSri === 'AUTORIZADO',
+                      'bg-warning': nc.estadoSri === 'PENDIENTE', 
+                      'bg-danger': nc.estadoSri === 'DEVUELTA' || nc.estadoSri === 'ANULADA'
+                    }">
+                                    {{ nc.estadoSri || 'PENDIENTE' }}
+                                </span>
+                                <div *ngIf="nc.mensajeSri" class="text-danger small mt-1" style="max-width: 200px;">
+                                    {{ nc.mensajeSri }}
+                                </div>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-success me-1"
+                                    *ngIf="nc.estadoSri !== 'AUTORIZADO'" (click)="enviarSri(nc.id)"
+                                    title="Enviar al SRI">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" title="PDF (Pendiente)">
+                                    <i class="fas fa-file-pdf"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr *ngIf="notas.length === 0 && !loading">
+                            <td colspan="7" class="text-center py-4 text-muted">No existen notas de crédito registradas.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

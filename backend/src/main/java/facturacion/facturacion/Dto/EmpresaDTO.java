@@ -7,7 +7,7 @@ import lombok.Setter;
 @Setter
 
 public class EmpresaDTO {
-    
+
     private String razonSocial;
     private String nombreComercial;
     private String ruc;
@@ -29,4 +29,6 @@ public class EmpresaDTO {
     private String contribuyenteEspecial;
     private String resolucion;
 
+    private String correoRemitente;
+    private String claveCorreo;
 }

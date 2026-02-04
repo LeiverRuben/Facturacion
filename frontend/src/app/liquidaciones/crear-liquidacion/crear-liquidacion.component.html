@@ -1,0 +1,105 @@
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="page-title">Nueva Liquidación de Compra</h1>
+        <p class="page-subtitle">Complete los datos para generar el comprobante</p>
+    </div>
+    <div class="header-actions">
+        <button class="btn-action btn-secondary me-2" routerLink="/liquidaciones">
+            Cancelar
+        </button>
+        <button class="btn-action btn-primary" (click)="guardar()" [disabled]="procesando">
+            <i class="bx bx-save" *ngIf="!procesando"></i>
+            <span class="spinner-border spinner-border-sm me-2" *ngIf="procesando"></span>
+            {{ procesando ? 'Guardando...' : 'Emitir Liquidación' }}
+        </button>
+    </div>
+</div>
+
+<form [formGroup]="lcForm">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Datos del Proveedor</h5>
+                    <div class="form-group mb-3">
+                        <label class="form-label">Seleccionar Proveedor</label>
+                        <select class="form-select" formControlName="proveedorId">
+                            <option value="">-- Seleccione un proveedor --</option>
+                            <option *ngFor="let p of proveedores" [value]="p.id">
+                                {{ p.razonSocial }} ({{ p.ruc }})
+                            </option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="card-title m-0">Items de Compra</h5>
+                        <button type="button" class="btn btn-sm btn-outline-primary" (click)="agregarFila()">
+                            <i class="bx bx-plus-circle me-1"></i> Agregar Item
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th style="width: 40%">Producto</th>
+                                    <th>Cant.</th>
+                                    <th>Precio</th>
+                                    <th>Desc.</th>
+                                    <th>Subtotal</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody formArrayName="detalles">
+                                <tr *ngFor="let det of detalles; let i = index" [formGroupName]="i">
+                                    <td>
+                                        <select class="form-select" formControlName="productoId"
+                                            (change)="onProductoChange(i)">
+                                            <option value="">Seleccione...</option>
+                                            <option *ngFor="let prod of productos" [value]="prod.productoId">
+                                                {{ prod.productoNombre }}
+                                            </option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control" formControlName="cantidad"
+                                            (blur)="redondearDetalle(i, 'cantidad')">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control" formControlName="precioUnitario"
+                                            (blur)="redondearDetalle(i, 'precioUnitario')">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control" formControlName="descuento"
+                                            (blur)="redondearDetalle(i, 'descuento')">
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold">${{ det.get('subtotal')?.value | number:'1.2-2' }}</span>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn-icon delete" (click)="eliminarFila(i)">
+                                            <i class="bx bx-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="4" class="text-end fw-bold">TOTAL:</td>
+                                    <td colspan="2" class="fw-bold text-primary fs-5">${{ calcularTotal() |
+                                        number:'1.2-2' }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

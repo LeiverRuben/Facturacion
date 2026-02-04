@@ -57,11 +57,54 @@ public class KardexServicio {
         kardexRepositorio.save(k);
     }
 
+    // Nuevo método para cuando el stock YA FUE actualizado externamente (ej: al
+    // crear producto o editar manual)
+    public void registrarMovimientoDirecto(Producto producto, String tipo, String detalle, Integer cantidad,
+            Double costoUnitario) {
+        Kardex k = new Kardex();
+        k.setFecha(LocalDateTime.now());
+        k.setProducto(producto);
+        k.setTipoMovimiento(tipo);
+        k.setDetalle(detalle);
+        k.setCantidad(Math.abs(cantidad)); // Siempre positivo en visualización
+        k.setCostoUnitario(costoUnitario);
+        k.setTotalMovimiento(k.getCantidad() * costoUnitario);
+
+        // El producto YA TIENE el stock final actualizado
+        k.setSaldoCantidad(producto.getProductoStock());
+        // Saldo Total Estimado
+        k.setSaldoTotal(producto.getProductoStock() * costoUnitario);
+
+        kardexRepositorio.save(k);
+    }
+
     public List<Kardex> obtenerKardexPorProducto(Long productoId) {
         return kardexRepositorio.findByProductoProductoIdOrderByFechaAsc(productoId);
     }
 
+    public List<Kardex> listarTodos() {
+        return kardexRepositorio.findAll();
+    }
+
     public Producto obtenerProductoPorId(Long id) {
         return productoRepositorio.findById(id).orElse(null);
+    }
+
+    public void sincronizarInventario() {
+        List<Producto> productos = productoRepositorio.findAll();
+        for (Producto p : productos) {
+            // Verificar si tiene movimientos
+            List<Kardex> movimientos = kardexRepositorio.findByProductoProductoIdOrderByFechaAsc(p.getProductoId());
+            if (movimientos.isEmpty() && p.getProductoStock() > 0) {
+                // Crear entrada inicial
+                registrarMovimientoDirecto(
+                        p,
+                        "ENTRADA",
+                        "Sincronización de Inventario (Inicial)",
+                        p.getProductoStock(),
+                        p.getProductoPrecio() // Costo estimado
+                );
+            }
+        }
     }
 }

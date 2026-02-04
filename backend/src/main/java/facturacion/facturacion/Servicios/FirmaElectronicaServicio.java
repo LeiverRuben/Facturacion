@@ -46,9 +46,7 @@ public class FirmaElectronicaServicio {
             // 1. Validar existencia del archivo P12
             File p12File = new File(p12Path);
             if (!p12File.exists()) {
-                System.out.println("ADVERTENCIA: Archivo de firma no encontrado (" + p12Path
-                        + "). No se puede generar XAdES-BES. Retornando XML original.");
-                return xmlPath;
+                throw new RuntimeException("Archivo de firma no encontrado en: " + p12Path);
             }
 
             // Si es un directorio, buscar el primer archivo .p12 o .pfx
@@ -59,9 +57,7 @@ public class FirmaElectronicaServicio {
                     p12File = files[0];
                     System.out.println("INFO: Usando archivo de firma encontrado: " + p12File.getAbsolutePath());
                 } else {
-                    System.out.println(
-                            "ADVERTENCIA: No se encontraron archivos .p12 / .pfx en el directorio: " + p12Path);
-                    return xmlPath;
+                    throw new RuntimeException("No se encontraron archivos .p12 / .pfx en el directorio: " + p12Path);
                 }
             }
 
@@ -89,6 +85,16 @@ public class FirmaElectronicaServicio {
             XMLSignature firma = new XMLSignature(doc, baseURI, XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA1);
 
             Element root = doc.getDocumentElement();
+            // IMPORTANTE PARA SRI: Identificar el atributo 'id' como ID real para que la
+            // referencia # funcione
+            if (root.hasAttribute("id")) {
+                root.setIdAttribute("id", true);
+            } else {
+                // Si por alguna razón no tiene id, se lo ponemos (fallback)
+                root.setAttribute("id", "comprobante");
+                root.setIdAttribute("id", true);
+            }
+
             root.appendChild(firma.getElement());
 
             // 5. Transformaciones (Enveloped Signature)
@@ -98,7 +104,9 @@ public class FirmaElectronicaServicio {
             // namespaces
             transforms.addTransform(Transforms.TRANSFORM_C14N_EXCL_OMIT_COMMENTS);
 
-            firma.addDocument("", transforms, Constants.ALGO_ID_DIGEST_SHA1);
+            // CAMBIO CLAVE: Referenciar explícitamente al ID del comprobante en lugar de
+            // todo el documento ("")
+            firma.addDocument("#comprobante", transforms, Constants.ALGO_ID_DIGEST_SHA1);
 
             // 6. Añadir KeyInfo (Certificado y Clave Pública)
             firma.addKeyInfo(cert);
@@ -188,7 +196,10 @@ public class FirmaElectronicaServicio {
         certTag.appendChild(issuerSerial);
 
         Element x509IssuerName = doc.createElementNS(Constants.SignatureSpecNS, "ds:X509IssuerName");
-        x509IssuerName.setTextContent(cert.getIssuerX500Principal().getName());
+        // FIX: SRI / XAdES often requires RFC 2253 format for Issuer Name in
+        // IssuerSerial to match certificate bytes
+        x509IssuerName
+                .setTextContent(cert.getIssuerX500Principal().getName(javax.security.auth.x500.X500Principal.RFC2253));
         issuerSerial.appendChild(x509IssuerName);
 
         Element x509SerialNumber = doc.createElementNS(Constants.SignatureSpecNS, "ds:X509SerialNumber");
@@ -203,5 +214,52 @@ public class FirmaElectronicaServicio {
         MessageDigest md = MessageDigest.getInstance("SHA-1");
         byte[] digest = md.digest(cert.getEncoded());
         return java.util.Base64.getEncoder().encodeToString(digest);
+    }
+
+    public String verificarFirma(String p12Path, String password) {
+        try {
+            File p12File = new File(p12Path);
+            if (!p12File.exists())
+                return "ERROR: Archivo no encontrado en: " + p12Path;
+
+            // Support for directories (auto-find .p12)
+            if (p12File.isDirectory()) {
+                File[] files = p12File.listFiles(
+                        (dir, name) -> name.toLowerCase().endsWith(".p12") || name.toLowerCase().endsWith(".pfx"));
+                if (files != null && files.length > 0) {
+                    p12File = files[0];
+                } else {
+                    return "ERROR: No se encontró ningún archivo .p12 o .pfx en la carpeta: " + p12Path;
+                }
+            }
+
+            KeyStore ks = KeyStore.getInstance("PKCS12");
+            try (FileInputStream fis = new FileInputStream(p12File)) {
+                ks.load(fis, password.toCharArray());
+            } catch (java.io.IOException e) {
+                if (e.getMessage() != null && e.getMessage().contains("password")) {
+                    return "ERROR: La contraseña es INCORRECTA.";
+                }
+                return "ERROR: No se pudo abrir el archivo (Corrupto o no es un .p12 válido).";
+            } catch (Exception e) {
+                return "ERROR: Contraseña incorrecta o archivo corrupto.";
+            }
+
+            String alias = ks.aliases().nextElement();
+            X509Certificate cert = (X509Certificate) ks.getCertificate(alias);
+
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+            Date now = new Date();
+            long daysLeft = (cert.getNotAfter().getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+
+            return String.format("OK: Certificado válido.\nEmisor: %s\nExpira: %s (%d días restantes)\nSujeto: %s",
+                    cert.getIssuerX500Principal().getName(),
+                    sdf.format(cert.getNotAfter()),
+                    daysLeft,
+                    cert.getSubjectX500Principal().getName());
+
+        } catch (Exception e) {
+            return "ERROR General: " + e.getMessage();
+        }
     }
 }

@@ -1,0 +1,120 @@
+<div class="container fade-in">
+    <div class="d-flex align-items-center mb-4">
+        <a routerLink="/notas-credito" class="btn btn-outline-secondary me-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h2 class="mb-0">Nueva Nota de Crédito</h2>
+    </div>
+
+    <!-- 1. Buscador de Facturas -->
+    <div class="card shadow-sm mb-4" *ngIf="!facturaSeleccionada">
+        <div class="card-body">
+            <h5 class="card-title">Buscar Factura Autorizada</h5>
+            <div class="input-group mb-3">
+                <input type="text" class="form-control" placeholder="Número de factura, cédula o nombre del cliente..."
+                    [(ngModel)]="terminoBusqueda" (keyup.enter)="buscarFacturas()">
+                <button class="btn btn-primary" (click)="buscarFacturas()">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+            </div>
+
+            <!-- Resultados -->
+            <div *ngIf="mostrarResultados" class="list-group">
+                <button *ngFor="let fact of facturasEncontradas"
+                    class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                    (click)="seleccionarFactura(fact)">
+                    <div>
+                        <strong>{{ fact.secuencial }}</strong> - {{ fact.fechaEmision | date:'dd/MM/yyyy' }} <br>
+                        <small class="text-muted">{{ fact.cliente.clienteNombre }} {{ fact.cliente.clienteApellido }}
+                            ({{ fact.cliente.identificacion }})</small>
+                    </div>
+                    <span class="badge bg-success">{{ fact.totalFactura | currency }}</span>
+                </button>
+                <div *ngIf="facturasEncontradas.length === 0" class="p-3 text-muted text-center">
+                    No se encontraron facturas autorizadas con ese criterio.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Formulario de Emisión -->
+    <div class="card shadow-sm" *ngIf="facturaSeleccionada">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <div>
+                <strong>Factura:</strong> {{ facturaSeleccionada.secuencial }}
+                <span class="text-muted ms-2">({{ facturaSeleccionada.fechaEmision | date:'dd/MM/yyyy' }})</span>
+            </div>
+            <button class="btn btn-sm btn-outline-danger" (click)="facturaSeleccionada = null">
+                Cambiar Factura
+            </button>
+        </div>
+        <div class="card-body">
+            <form [formGroup]="ncForm" (ngSubmit)="guardar()">
+
+                <!-- Motivo -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Motivo de la Modificación *</label>
+                    <input type="text" class="form-control" formControlName="motivo"
+                        placeholder="Ej: Devolución de mercadería por daño">
+                    <div *ngIf="ncForm.get('motivo')?.invalid && ncForm.get('motivo')?.touched"
+                        class="text-danger small">
+                        El motivo es obligatorio.
+                    </div>
+                </div>
+
+                <!-- Detalle de Productos -->
+                <h5 class="mb-3">Seleccione los items a devolver:</h5>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="bg-light">
+                            <tr>
+                                <th style="width: 50px;" class="text-center">
+                                    <i class="fas fa-check"></i>
+                                </th>
+                                <th>Producto</th>
+                                <th>Cant. Facturada</th>
+                                <th>Cant. a Devolver</th>
+                                <th>Precio Unit.</th>
+                                <th>Total Dev.</th>
+                            </tr>
+                        </thead>
+                        <tbody formArrayName="detalles">
+                            <tr *ngFor="let item of detalles; let i = index" [formGroupName]="i">
+                                <td class="text-center">
+                                    <input type="checkbox" class="form-check-input" formControlName="seleccionado">
+                                </td>
+                                <td>
+                                    {{ item.value.productoNombre }}
+                                </td>
+                                <td class="text-center">
+                                    {{ item.value.cantidadOriginal }}
+                                </td>
+                                <td style="width: 150px;">
+                                    <input type="number" class="form-control form-control-sm"
+                                        formControlName="cantidadDevolver" min="0" [max]="item.value.cantidadOriginal">
+                                </td>
+                                <td class="text-end">
+                                    {{ item.value.precioUnitario | number:'1.2-2' }}
+                                </td>
+                                <td class="text-end fw-bold">
+                                    <span *ngIf="item.value.seleccionado">
+                                        {{ (item.value.cantidadDevolver * item.value.precioUnitario) | number:'1.2-2' }}
+                                    </span>
+                                    <span *ngIf="!item.value.seleccionado" class="text-muted">--</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <button type="button" class="btn btn-secondary" routerLink="/notas-credito">Cancelar</button>
+                    <button type="submit" class="btn btn-success btn-lg" [disabled]="procesando">
+                        <i class="fas fa-save me-2"></i>
+                        {{ procesando ? 'Procesando...' : 'Emitir Nota de Crédito' }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

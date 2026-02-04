@@ -1,6 +1,6 @@
 
 INSERT IGNORE INTO empresa (empresa_id, razon_social, nombre_comercial, ruc, dir_matriz, dir_establecimiento, establecimiento, punto_emision, ambiente, tipo_emision, obligado_contabilidad, ruta_firma, clave_firma)
-VALUES (1, 'GLENN FRANCO VEGA JARAMILLO', 'GLENN FRANCO VEGA JARAMILLO', '0910683853001', 'Av. Principal 123', 'Av. Principal 123', '001', '001', 1, 1, 'NO', 'PENDIENTE', 'PENDIENTE');
+VALUES (1, 'GLENN FRANCO VEGA JARAMILLO', 'GLENN FRANCO VEGA JARAMILLO', '9999999999001', 'Av. Principal 123', 'Av. Principal 123', '001', '001', 1, 1, 'NO', 'PENDIENTE', 'PENDIENTE');
 -- Actualizar si ya existía con datos incorrectos
 UPDATE empresa 
 SET ruta_firma = 'PENDIENTE', 
@@ -22,3 +22,6 @@ INSERT IGNORE INTO categoria (categoria_id, categoria_nombre, categoria_descripc
 -- Insertar Cliente por defecto
 INSERT IGNORE INTO cliente (cliente_id, cliente_nombre, cliente_apellido, cliente_direccion, cliente_telefono, cliente_email, cliente_estado) 
 VALUES (1, 'Consumidor Final', 'Genérico', 'S/D', '0999999999', 'consumidor@mail.com', 1);
+
+-- ACTUALIZACIÓN AUTOMÁTICA DE PRODUCTOS (MIGRACIÓN IVA 12% -> 15%)
+UPDATE producto SET producto_tasa = 15.0 WHERE producto_tasa = 12.0;

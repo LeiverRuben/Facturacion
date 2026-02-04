@@ -38,6 +38,9 @@ public class ComprobanteRetencion {
     private LocalDateTime fechaAutorizacion;
     private String mensajeSri;
 
+    // Estado Administrativo Interno (PAGADO, PENDIENTE)
+    private String estadoInterno; // PENDIENTE, PAGADO
+
     @ManyToOne
     @JoinColumn(name = "proveedor_id", nullable = false)
     private Proveedor proveedor;

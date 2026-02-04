@@ -65,7 +65,8 @@
 /* Derecha: Formulario */
 .form-panel {
     flex: 1;
-    background: white;
+    background: var(--bg-color);
+    /* Usar variable de fondo */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -75,7 +76,21 @@
 .login-card-v2 {
     width: 100%;
     max-width: 420px;
-    padding: 2rem;
+    padding: 2.5rem;
+    background: var(--card-bg);
+    /* Fondo de tarjeta según el tema */
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    /* Sombra suave */
+}
+
+/* Títulos con variables del sistema */
+.login-header h2 {
+    color: var(--text-main);
+}
+
+.login-header p {
+    color: var(--text-muted);
 }
 
 /* Estilos Específicos del Formulario V2 */
@@ -104,7 +119,8 @@
     border: none;
     background: transparent;
     font-size: 1.1rem;
-    color: #1e293b;
+    color: var(--text-main);
+    /* Cambiado de color fijo a variable */
     outline: none;
 }
 
@@ -170,9 +186,39 @@
 }
 
 /* Responsive */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
     .brand-panel {
         display: none;
-        /* Ocultar panel visual en móviles/tablets pequeños */
+        /* Ocultar en tablets y móviles */
+    }
+}
+
+.mobile-logo {
+    display: none;
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.mobile-logo i {
+    font-size: 3rem;
+    color: var(--primary-color);
+}
+
+.mobile-logo h1 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin: 0;
+}
+
+@media (max-width: 1024px) {
+    .mobile-logo {
+        display: block;
+    }
+
+    .login-card-v2 {
+        box-shadow: none;
+        /* En móvil se ve mejor limpio */
+        background: transparent;
     }
 }

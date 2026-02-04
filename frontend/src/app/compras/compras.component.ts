@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../environments/environment';
+import Swal from 'sweetalert2';
 
 interface Proveedor {
     id: number;
@@ -165,8 +166,12 @@ export class ComprasComponent implements OnInit {
     }
 
     guardarCompra() {
-        if (!this.compra.proveedorId || !this.compra.numeroComprobante || this.detalles.length === 0) {
-            this.mostrarMensaje('Complete la cabecera y agregue productos', 'error');
+        if (!this.compra.proveedorId || !this.compra.numeroComprobante || typeof this.compra.proveedorId !== 'number') {
+            Swal.fire('Atención', 'Seleccione un proveedor y numero de comprobante', 'warning');
+            return;
+        }
+        if (this.detalles.length === 0) {
+            Swal.fire('Atención', 'Agregue al menos un producto', 'warning');
             return;
         }
 

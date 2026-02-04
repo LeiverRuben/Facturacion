@@ -56,12 +56,6 @@ public class JwtService {
         }
     }
 
-    // Verifica si el token expiró
-    private boolean isTokenExpired(String token) {
-        final Date expiration = extractClaim(token, Claims::getExpiration);
-        return expiration.before(new Date());
-    }
-
     private final String SECRET_KEY = "claveMuySecretaDeAlMenos256bitsClaveMuySecretaDeAlMenos256bits";
 
     private Key getSigningKey() {

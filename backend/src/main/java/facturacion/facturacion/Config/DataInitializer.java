@@ -9,6 +9,7 @@ import facturacion.facturacion.Entidades.TipoUsuario;
 import facturacion.facturacion.Entidades.Usuario;
 import facturacion.facturacion.Repositorios.TipoUsuarioRepositorio;
 import facturacion.facturacion.Repositorios.UsuarioRepositorio;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 @Configuration
 public class DataInitializer implements CommandLineRunner {
@@ -22,34 +23,25 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @Override
     public void run(String... args) throws Exception {
-        TipoUsuario rolAdmin = crearRolSiNoExiste("ADMIN", "Administrador del sistema");
+        limpiarColumnasObsoletas();
 
-        crearRolSiNoExiste("VENDEDOR", "Vendedor de punto de venta");
-        crearRolSiNoExiste("CONTADOR", "Contador encargado de reportes");
+        TipoUsuario rolAdmin = crearRolSiNoExiste("ADMIN", "Administrador del sistema");
+        TipoUsuario rolVendedor = crearRolSiNoExiste("VENDEDOR", "Vendedor de punto de venta");
+        TipoUsuario rolContador = crearRolSiNoExiste("CONTADOR", "Contador encargado de reportes");
 
         // 2. Crear o Actualizar Usuario Admin
-        if (usuarioRepositorio.existsByUsername("admin")) {
-            // Actualizar contraseña si ya existe (para asegurar que sea 12345)
-            Usuario admin = usuarioRepositorio.findByUsername("admin").get();
-            admin.setPassword(passwordEncoder.encode("12345"));
-            admin.setEstaActivo("SI"); // Asegurar que esté activo
-            admin.setTipoUsuario(rolAdmin); // Asegurar rol
-            usuarioRepositorio.save(admin);
-            System.out.println("Usuario 'admin' actualizado correctamente.");
-        } else {
-            Usuario admin = new Usuario();
-            admin.setNombre("Super Admin");
-            admin.setCorreo("admin@facturacion.com");
-            admin.setUsername("admin");
-            admin.setPassword(passwordEncoder.encode("12345")); // Contraseña default
-            admin.setEstaActivo("SI");
-            admin.setTipoUsuario(rolAdmin);
+        crearUsuarioSiNoExiste("admin", "Super Admin", "admin@facturacion.com", rolAdmin);
 
-            usuarioRepositorio.save(admin);
-            System.out.println("Usuario 'admin' creado con contraseña '12345'");
-        }
+        // 2.1 Crear Usuario Vendedor default
+        crearUsuarioSiNoExiste("vendedor", "Vendedor Default", "vendedor@facturacion.com", rolVendedor);
+
+        // 2.2 Crear Usuario Contador default
+        crearUsuarioSiNoExiste("contador", "Contador Default", "contador@facturacion.com", rolContador);
 
         seedDataForTesting();
     }
@@ -62,6 +54,50 @@ public class DataInitializer implements CommandLineRunner {
                     nuevoRol.setDescripcion(descripcion);
                     return tipoUsuarioRepositorio.save(nuevoRol);
                 });
+    }
+
+    private void crearUsuarioSiNoExiste(String username, String nombre, String correo, TipoUsuario rol) {
+        if (usuarioRepositorio.existsByUsername(username)) {
+            Usuario user = usuarioRepositorio.findByUsername(username).get();
+            user.setPassword(passwordEncoder.encode("12345"));
+            user.setEstaActivo("SI");
+            user.setTipoUsuario(rol);
+            usuarioRepositorio.save(user);
+            System.out.println("Usuario '" + username + "' actualizado/verificado.");
+        } else {
+            Usuario user = new Usuario();
+            user.setNombre(nombre);
+            user.setCorreo(correo);
+            user.setUsername(username);
+            user.setPassword(passwordEncoder.encode("12345"));
+            user.setEstaActivo("SI");
+            user.setTipoUsuario(rol);
+            usuarioRepositorio.save(user);
+            System.out.println("Usuario '" + username + "' creado con éxito.");
+        }
+    }
+
+    private void limpiarColumnasObsoletas() {
+        System.out.println("Iniciando corrección de base de datos (Columnas Obsoletas)...");
+
+        // Estrategia: Hacer la columna NULLABLE en lugar de borrarla para evitar
+        // errores de Foreign Keys
+
+        // 1. Liquidación de Compra
+        try {
+            jdbcTemplate.execute("ALTER TABLE liquidacion_de_compra MODIFY COLUMN cliente_id BIGINT NULL DEFAULT NULL");
+            System.out.println("OK: Columna 'cliente_id' en liquidacion_de_compra ahora es NULLABLE.");
+        } catch (Exception e) {
+            System.err.println("WARN: Falló modificación de liquidacion_de_compra: " + e.getMessage());
+        }
+
+        // 2. Guía de Remisión
+        try {
+            jdbcTemplate.execute("ALTER TABLE guia_de_remision MODIFY COLUMN cliente_id BIGINT NULL DEFAULT NULL");
+            System.out.println("OK: Columna 'cliente_id' en guia_de_remision ahora es NULLABLE.");
+        } catch (Exception e) {
+            System.err.println("WARN: Falló modificación de guia_de_remision: " + e.getMessage());
+        }
     }
 
     @Autowired
@@ -105,14 +141,8 @@ public class DataInitializer implements CommandLineRunner {
             empresaRepositorio.save(empresa);
             System.out.println("Empresa de prueba creada con firma configurada.");
         } else {
-            // ACTUALIZACIÓN FORZADA: Si ya existe, aseguramos que tenga el RUC y Firma
-            // correctos
-            facturacion.facturacion.Entidades.Empresa empresa = empresaRepositorio.findAll().get(0);
-            empresa.setRuc(rucDefault);
-            empresa.setRutaFirma(rutaFirma);
-            empresa.setClaveFirma(claveFirma);
-            empresaRepositorio.save(empresa);
-            System.out.println("Empresa actualizada con la nueva firma y RUC reales.");
+            // No sobrescribir datos de producción si ya existe la empresa
+            System.out.println("Empresa ya existe. No se sobrescriben datos de firma.");
         }
 
         // 2. Cliente Default

@@ -105,13 +105,12 @@
                         </td>
                         <td>{{ p.direccion || 'N/A' }}</td>
                         <td>
-                            <div class="action-buttons">
-                                <button class="btn-icon text-primary" (click)="editarProveedor(p)" title="Editar">
-                                    <i class='bx bx-edit'></i>
+                            <div class="btn-icon-wrapper">
+                                <button class="btn-icon edit" (click)="editarProveedor(p)" title="Editar">
+                                    <i class='bx bx-edit-alt'></i>
                                 </button>
-                                <button class="btn-icon text-danger" (click)="eliminarProveedor(p.id!)"
-                                    title="Eliminar">
-                                    <i class='bx bx-trash'></i>
+                                <button class="btn-icon delete" (click)="eliminarProveedor(p.id!)" title="Eliminar">
+                                    <i class='bx bx-trash-alt'></i>
                                 </button>
                             </div>
                         </td>

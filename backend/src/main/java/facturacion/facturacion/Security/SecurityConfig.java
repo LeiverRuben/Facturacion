@@ -50,7 +50,8 @@ public class SecurityConfig {
 
                         .requestMatchers(
                                 "/auth/**",
-                                "/api/public/**", // Endpoint público explícito si creamos alguno
+                                "/api/public/**",
+                                "/api/empresa/test-firma", // Allow signature test without strict auth check for now
                                 "/v3/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html")

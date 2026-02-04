@@ -8,6 +8,11 @@ import facturacion.facturacion.Entidades.ComprobanteRetencion;
 import facturacion.facturacion.Entidades.DetalleRetencion;
 import facturacion.facturacion.Entidades.Factura;
 import facturacion.facturacion.Entidades.DetalleFactura;
+import facturacion.facturacion.Entidades.GuiaDeRemision;
+import facturacion.facturacion.Entidades.DestinatarioGuia;
+import facturacion.facturacion.Entidades.DetalleGuia;
+import facturacion.facturacion.Entidades.LiquidacionDeCompra;
+import facturacion.facturacion.Entidades.DetalleLiquidacion;
 import org.springframework.stereotype.Service;
 
 import java.awt.Color;
@@ -589,5 +594,206 @@ public class PdfGenServicio {
 
                 tablaFirma.addCell(celda);
                 document.add(tablaFirma);
+        }
+
+        // ======================================
+        // GENERAR PDF DE GUÍA DE REMISIÓN
+        // ======================================
+        public byte[] generarPdfGuiaRemision(GuiaDeRemision guia) throws IOException {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                Document document = new Document(PageSize.A4, 30, 30, 30, 30);
+
+                try {
+                        PdfWriter.getInstance(document, baos);
+                        document.open();
+
+                        // 1. Encabezado
+                        agregarEncabezadoEmpresa(document, guia.getEmpresa());
+
+                        // Título
+                        Paragraph titulo = new Paragraph("GUÍA DE REMISIÓN",
+                                        FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16));
+                        titulo.setAlignment(Element.ALIGN_CENTER);
+                        titulo.setSpacingAfter(10);
+                        document.add(titulo);
+
+                        // Info Guía
+                        PdfPTable tablaInfo = new PdfPTable(2);
+                        tablaInfo.setWidthPercentage(100);
+                        tablaInfo.setSpacingAfter(15);
+                        agregarCelda(tablaInfo, "No. Comprobante:", guia.getSecuencial());
+                        agregarCelda(tablaInfo, "Estado SRI:", guia.getEstadoSri());
+                        agregarCelda(tablaInfo, "Fecha Emisión:", guia.getFechaEmision().format(formatter));
+                        agregarCelda(tablaInfo, "Clave Acceso:", guia.getClaveAcceso());
+                        document.add(tablaInfo);
+
+                        // 2. Info Transportista
+                        Paragraph subTrans = new Paragraph("INFORMACIÓN DEL TRANSPORTISTA",
+                                        FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12));
+                        subTrans.setSpacingAfter(5);
+                        document.add(subTrans);
+
+                        PdfPTable tablaTrans = new PdfPTable(2);
+                        tablaTrans.setWidthPercentage(100);
+                        tablaTrans.setSpacingAfter(15);
+                        agregarCelda(tablaTrans, "Razón Social:", guia.getTransportistaRazonSocial());
+                        agregarCelda(tablaTrans, "RUC/CI:", guia.getTransportistaIdentificacion());
+                        agregarCelda(tablaTrans, "Placa:", guia.getPlaca());
+                        agregarCelda(tablaTrans, "Fecha Inicio:", guia.getFechaIniTransporte().toString());
+                        agregarCelda(tablaTrans, "Fecha Fin:", guia.getFechaFinTransporte().toString());
+                        agregarCelda(tablaTrans, "Punto Partida:", guia.getDirPartida());
+                        document.add(tablaTrans);
+
+                        // 3. Destinatarios
+                        if (guia.getDestinatarios() != null) {
+                                for (DestinatarioGuia dest : guia.getDestinatarios()) {
+                                        Paragraph subDest = new Paragraph(
+                                                        "DESTINATARIO: " + dest.getRazonSocialDestinatario(),
+                                                        FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11));
+                                        subDest.setSpacingBefore(10);
+                                        subDest.setSpacingAfter(5);
+                                        document.add(subDest);
+
+                                        PdfPTable tablaDest = new PdfPTable(2);
+                                        tablaDest.setWidthPercentage(100);
+                                        tablaDest.setSpacingAfter(10);
+                                        agregarCelda(tablaDest, "RUC/CI:", dest.getIdentificacionDestinatario());
+                                        agregarCelda(tablaDest, "Dirección Llegada:", dest.getDirDestinatario());
+                                        agregarCelda(tablaDest, "Motivo:", dest.getMotivoTraslado());
+                                        agregarCelda(tablaDest, "Ruta:", dest.getRuta());
+                                        document.add(tablaDest);
+
+                                        // Detalles
+                                        PdfPTable tablaDetalles = new PdfPTable(3);
+                                        tablaDetalles.setWidthPercentage(100);
+                                        tablaDetalles.setWidths(new float[] { 2f, 6f, 2f });
+
+                                        agregarCeldaHeader(tablaDetalles, "Código");
+                                        agregarCeldaHeader(tablaDetalles, "Descripción");
+                                        agregarCeldaHeader(tablaDetalles, "Cantidad");
+
+                                        if (dest.getDetalles() != null) {
+                                                for (DetalleGuia det : dest.getDetalles()) {
+                                                        tablaDetalles.addCell(new PdfPCell(new Phrase(
+                                                                        det.getCodigoInterno(), FontFactory.getFont(
+                                                                                        FontFactory.HELVETICA, 9))));
+                                                        tablaDetalles.addCell(new PdfPCell(new Phrase(
+                                                                        det.getDescripcion(), FontFactory.getFont(
+                                                                                        FontFactory.HELVETICA, 9))));
+                                                        tablaDetalles.addCell(new PdfPCell(new Phrase(
+                                                                        String.valueOf(det.getCantidad()),
+                                                                        FontFactory.getFont(FontFactory.HELVETICA,
+                                                                                        9))));
+                                                }
+                                        }
+                                        document.add(tablaDetalles);
+                                }
+                        }
+
+                        document.close();
+                } catch (Exception e) {
+                        throw new IOException("Error creating PDF Guia", e);
+                }
+                return baos.toByteArray();
+        }
+
+        // ======================================
+        // GENERAR PDF DE LIQUIDACIÓN DE COMPRA
+        // ======================================
+        public byte[] generarPdfLiquidacionCompra(LiquidacionDeCompra liquidacion) throws IOException {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                Document document = new Document(PageSize.A4, 30, 30, 30, 30);
+
+                try {
+                        PdfWriter.getInstance(document, baos);
+                        document.open();
+
+                        // 1. Encabezado
+                        agregarEncabezadoEmpresa(document, liquidacion.getEmpresa());
+
+                        // Título
+                        Paragraph titulo = new Paragraph("LIQUIDACIÓN DE COMPRA",
+                                        FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16));
+                        titulo.setAlignment(Element.ALIGN_CENTER);
+                        titulo.setSpacingAfter(10);
+                        document.add(titulo);
+
+                        // Info SRI
+                        PdfPTable tablaInfo = new PdfPTable(2);
+                        tablaInfo.setWidthPercentage(100);
+                        tablaInfo.setSpacingAfter(15);
+                        agregarCelda(tablaInfo, "No. Comprobante:", liquidacion.getSecuencial());
+                        agregarCelda(tablaInfo, "Estado SRI:", liquidacion.getEstadoSri());
+                        agregarCelda(tablaInfo, "Fecha Emisión:", liquidacion.getFechaEmision().format(formatter));
+                        if (liquidacion.getFechaAutorizacion() != null) {
+                                agregarCelda(tablaInfo, "Fecha Autorización:",
+                                                liquidacion.getFechaAutorizacion().format(formatter));
+                        }
+                        agregarCelda(tablaInfo, "Clave Acceso:", liquidacion.getClaveAcceso());
+                        document.add(tablaInfo);
+
+                        // 2. Info Proveedor
+                        Paragraph subProv = new Paragraph("INFORMACIÓN DEL PROVEEDOR",
+                                        FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12));
+                        subProv.setSpacingAfter(5);
+                        document.add(subProv);
+
+                        PdfPTable tablaProv = new PdfPTable(2);
+                        tablaProv.setWidthPercentage(100);
+                        tablaProv.setSpacingAfter(15);
+                        if (liquidacion.getProveedor() != null) {
+                                agregarCelda(tablaProv, "Razón Social:", liquidacion.getProveedor().getRazonSocial());
+                                agregarCelda(tablaProv, "RUC/CI:", liquidacion.getProveedor().getRuc());
+                                agregarCelda(tablaProv, "Dirección:", liquidacion.getProveedor().getDireccion());
+                                agregarCelda(tablaProv, "Email:", liquidacion.getProveedor().getEmail());
+                        }
+                        document.add(tablaProv);
+
+                        // 3. Detalles
+                        PdfPTable tablaDetalles = new PdfPTable(4);
+                        tablaDetalles.setWidthPercentage(100);
+                        tablaDetalles.setWidths(new float[] { 1.5f, 4.5f, 2f, 2f });
+                        tablaDetalles.setSpacingAfter(10);
+
+                        agregarCeldaHeader(tablaDetalles, "Cant");
+                        agregarCeldaHeader(tablaDetalles, "Descripción");
+                        agregarCeldaHeader(tablaDetalles, "P. Unitario");
+                        agregarCeldaHeader(tablaDetalles, "Total");
+
+                        if (liquidacion.getDetalles() != null) {
+                                for (DetalleLiquidacion det : liquidacion.getDetalles()) {
+                                        tablaDetalles.addCell(new PdfPCell(new Phrase(String.valueOf(det.getCantidad()),
+                                                        FontFactory.getFont(FontFactory.HELVETICA, 9))));
+                                        tablaDetalles.addCell(new PdfPCell(new Phrase(det.getDescripcion(),
+                                                        FontFactory.getFont(FontFactory.HELVETICA, 9))));
+                                        tablaDetalles.addCell(new PdfPCell(new Phrase(
+                                                        "$ " + String.format("%.2f", det.getPrecioUnitario()),
+                                                        FontFactory.getFont(FontFactory.HELVETICA, 9))));
+                                        tablaDetalles.addCell(new PdfPCell(new Phrase(
+                                                        "$ " + String.format("%.2f", det.getPrecioTotalSinImpuesto()),
+                                                        FontFactory.getFont(FontFactory.HELVETICA, 9))));
+                                }
+                        }
+                        document.add(tablaDetalles);
+
+                        // 4. Totales
+                        PdfPTable tablaTotales = new PdfPTable(2);
+                        tablaTotales.setWidthPercentage(40);
+                        tablaTotales.setHorizontalAlignment(Element.ALIGN_RIGHT);
+
+                        agregarCelda(tablaTotales, "Subtotal 12%:",
+                                        "$ " + String.format("%.2f", liquidacion.getSubtotal12()));
+                        agregarCelda(tablaTotales, "Subtotal 0%:",
+                                        "$ " + String.format("%.2f", liquidacion.getSubtotal0()));
+                        agregarCelda(tablaTotales, "IVA 12%:", "$ " + String.format("%.2f", liquidacion.getTotalIva()));
+                        agregarCelda(tablaTotales, "TOTAL:", "$ " + String.format("%.2f", liquidacion.getTotal()));
+
+                        document.add(tablaTotales);
+
+                        document.close();
+                } catch (Exception e) {
+                        throw new IOException("Error creating PDF Liquidacion", e);
+                }
+                return baos.toByteArray();
         }
 }

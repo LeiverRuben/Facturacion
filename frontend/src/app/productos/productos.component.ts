@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../environments/environment';
+import Swal from 'sweetalert2';
 
 interface Producto {
   productoId?: number;
@@ -135,12 +136,12 @@ interface Categoria {
                 </span>
               </td>
               <td>
-                <div class="d-flex gap-2">
-                  <button class="btn-action btn-secondary" (click)="editProducto(producto)" title="Editar">
-                    <i class='bx bx-edit'></i>
+                <div class="btn-icon-wrapper">
+                  <button class="btn-icon edit" (click)="editProducto(producto)" title="Editar">
+                    <i class='bx bx-edit-alt'></i>
                   </button>
-                  <button class="btn-action btn-danger" (click)="deleteProducto(producto.productoId!)" title="Eliminar">
-                    <i class='bx bx-trash'></i>
+                  <button class="btn-icon delete" (click)="deleteProducto(producto.productoId!)" title="Eliminar">
+                    <i class='bx bx-trash-alt'></i>
                   </button>
                 </div>
               </td>
@@ -237,6 +238,25 @@ export class ProductosComponent implements OnInit {
   }
 
   saveProducto() {
+    // Validaciones
+    if (!this.productoForm.productoNombre) {
+      Swal.fire('Error', 'El nombre del producto es obligatorio', 'warning');
+      return;
+    }
+    if (this.productoForm.productoPrecio === null || this.productoForm.productoPrecio <= 0) {
+      Swal.fire('Error', 'El precio debe ser mayor a 0', 'warning');
+      return;
+    }
+    if (this.productoForm.productoStock === null || this.productoForm.productoStock < 0) {
+      Swal.fire('Error', 'El stock no puede ser negativo', 'warning');
+      return;
+    }
+    // Categoria opcional, pero si la piden obligatoria descomentar:
+    /*if (!this.productoForm.categoriaId || this.productoForm.categoriaId <= 0) {
+       Swal.fire('Error', 'Seleccione una categoría', 'warning');
+       return;
+    }*/
+
     // Preparar el objeto explícitamente para asegurar que se envía lo correcto
     const payload: any = {
       productoNombre: this.productoForm.productoNombre,
@@ -256,24 +276,26 @@ export class ProductosComponent implements OnInit {
       // Actualizar producto existente
       this.http.put<Producto>(`${this.apiUrl}/api/productos/${this.productoForm.productoId}`, payload).subscribe({
         next: () => {
+          Swal.fire('Actualizado', 'Producto actualizado correctamente', 'success');
           this.loadProductos();
           this.cancelEdit();
         },
         error: (error) => {
           console.error('Error updating product:', error);
-          alert('Error al actualizar producto. Revisa la consola.');
+          Swal.fire('Error', 'Error al actualizar producto. Revisa la consola.', 'error');
         }
       });
     } else {
       // Crear nuevo producto
       this.http.post<Producto>(`${this.apiUrl}/api/productos`, payload).subscribe({
         next: () => {
+          Swal.fire('Guardado', 'Producto creado correctamente', 'success');
           this.loadProductos();
           this.cancelEdit();
         },
         error: (error) => {
           console.error('Error creating product:', error);
-          alert('Error al guardar producto. Revisa la consola.');
+          Swal.fire('Error', 'Error al guardar producto. Revisa la consola.', 'error');
         }
       });
     }

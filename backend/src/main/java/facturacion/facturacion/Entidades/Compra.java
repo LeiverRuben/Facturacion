@@ -15,12 +15,14 @@ public class Compra {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @jakarta.validation.constraints.NotBlank(message = "El numero de comprobante es obligatorio")
     private String numeroComprobante; // Factura del proveedor
     private LocalDateTime fechaEmision;
     private LocalDateTime fechaRegistro;
 
     @ManyToOne
     @JoinColumn(name = "proveedor_id")
+    @jakarta.validation.constraints.NotNull(message = "El proveedor es obligatorio")
     private Proveedor proveedor;
 
     private Double subtotal;

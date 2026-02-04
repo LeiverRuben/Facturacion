@@ -43,14 +43,15 @@ public class UsuarioControlador {
     }
 
     @PostMapping
-    public ResponseEntity<Usuario> crearUsuario(@RequestBody Usuario usuario) {
+    public ResponseEntity<Usuario> crearUsuario(@RequestBody @jakarta.validation.Valid Usuario usuario) {
         // En una app real, validar que no exista el username/email
         Usuario nuevoUsuario = usuarioServicio.guardar(usuario);
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevoUsuario);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Usuario> actualizarUsuario(@PathVariable Long id, @RequestBody Usuario usuarioDetalles) {
+    public ResponseEntity<Usuario> actualizarUsuario(@PathVariable Long id,
+            @RequestBody @jakarta.validation.Valid Usuario usuarioDetalles) {
         Usuario usuario = usuarioServicio.listaUsuario(id);
         if (usuario == null) {
             return ResponseEntity.notFound().build();

@@ -17,8 +17,22 @@ public class ProductoServicio {
     @Autowired
     private facturacion.facturacion.Repositorios.CategoriaRepositorio categoriaRepositorio;
 
+    @Autowired
+    private KardexServicio kardexServicio;
+
     public Producto guardar(Producto producto) {
-        return productoRepositorio.save(producto);
+        Producto guardado = productoRepositorio.save(producto);
+        // Registrar Kardex Inicial si hay stock
+        if (guardado.getProductoStock() > 0) {
+            kardexServicio.registrarMovimientoDirecto(
+                    guardado,
+                    "ENTRADA",
+                    "Inventario Inicial",
+                    guardado.getProductoStock(),
+                    guardado.getProductoPrecio() // Usamos precio como costo ref por ahora
+            );
+        }
+        return guardado;
     }
 
     public List<Producto> listarAll() {
@@ -35,6 +49,7 @@ public class ProductoServicio {
                 .orElseThrow(() -> new IllegalArgumentException("Producto con ID " + id + " no existe."));
 
         // 2. Actualizar solo los campos permitidos
+        Integer oldStock = productoExistente.getProductoStock();
         productoExistente.setProductoNombre(productoActualizado.getProductoNombre());
         productoExistente.setProductoDescripcion(productoActualizado.getProductoDescripcion());
         productoExistente.setProductoPrecio(productoActualizado.getProductoPrecio());
@@ -52,7 +67,24 @@ public class ProductoServicio {
         }
 
         // 4. Guardar los cambios
-        return productoRepositorio.save(productoExistente);
+        // 4. Guardar los cambios
+        Producto actualizado = productoRepositorio.save(productoExistente);
+
+        // 5. Registrar en Kardex si hubo cambio de stock
+        if (oldStock != null && !oldStock.equals(actualizado.getProductoStock())) {
+            int diff = actualizado.getProductoStock() - oldStock;
+            String tipo = diff > 0 ? "ENTRADA" : "SALIDA";
+            String detalle = "Ajuste Manual de Inventario";
+
+            kardexServicio.registrarMovimientoDirecto(
+                    actualizado,
+                    tipo,
+                    detalle,
+                    Math.abs(diff),
+                    actualizado.getProductoPrecio());
+        }
+
+        return actualizado;
     }
 
     public void eliminar(long id) {

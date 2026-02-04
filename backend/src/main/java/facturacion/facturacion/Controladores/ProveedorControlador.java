@@ -31,12 +31,13 @@ public class ProveedorControlador {
     }
 
     @PostMapping
-    public Proveedor crear(@RequestBody Proveedor proveedor) {
+    public Proveedor crear(@RequestBody @jakarta.validation.Valid Proveedor proveedor) {
         return proveedorServicio.guardar(proveedor);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Proveedor> actualizar(@PathVariable Long id, @RequestBody Proveedor proveedor) {
+    public ResponseEntity<Proveedor> actualizar(@PathVariable Long id,
+            @RequestBody @jakarta.validation.Valid Proveedor proveedor) {
         Proveedor actualizado = proveedorServicio.actualizar(id, proveedor);
         if (actualizado != null) {
             return ResponseEntity.ok(actualizado);

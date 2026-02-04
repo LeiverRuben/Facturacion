@@ -1,0 +1,72 @@
+<div class="categorias-container">
+    <header class="page-header">
+        <div>
+            <h2 class="page-title">Gestión de Categorías</h2>
+            <p class="page-subtitle">Administra las clasificaciones de tus productos</p>
+        </div>
+    </header>
+
+    <div class="row">
+        <!-- Formulario -->
+        <div class="col-md-4 mb-4">
+            <div class="card-premium">
+                <h3 class="card-title mb-3">{{ isEditing ? 'Editar Categoría' : 'Nueva Categoría' }}</h3>
+                <form (ngSubmit)="onSubmit()">
+                    <div class="form-group mb-3">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" class="form-control" [(ngModel)]="categoriaForm.categoriaNombre"
+                            name="nombre" required placeholder="Ej. Bebidas, Snacks...">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" [(ngModel)]="categoriaForm.categoriaDescripcion"
+                            name="descripcion" rows="3" placeholder="Descripción opcional"></textarea>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn-action btn-primary w-100">
+                            {{ isEditing ? 'Actualizar' : 'Guardar' }}
+                        </button>
+                        <button type="button" class="btn-action btn-secondary" *ngIf="isEditing" (click)="resetForm()">
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tabla -->
+        <div class="col-md-8">
+            <div class="card-premium no-padding">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th class="text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let cat of categorias">
+                            <td class="fw-bold">{{ cat.categoriaNombre }}</td>
+                            <td class="text-muted">{{ cat.categoriaDescripcion || '-' }}</td>
+                            <td class="text-right">
+                                <div class="btn-icon-wrapper">
+                                    <button class="btn-icon edit" (click)="editCategoria(cat)" title="Editar">
+                                        <i class='bx bx-edit-alt'></i>
+                                    </button>
+                                    <button class="btn-icon delete" (click)="deleteCategoria(cat.categoriaId!)"
+                                        title="Eliminar">
+                                        <i class='bx bx-trash-alt'></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr *ngIf="categorias.length === 0">
+                            <td colspan="3" class="text-center py-4 text-muted">No hay categorías registradas.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

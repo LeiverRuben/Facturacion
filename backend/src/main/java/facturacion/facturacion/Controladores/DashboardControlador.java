@@ -45,11 +45,9 @@ public class DashboardControlador {
         Double totalHoy = facturaRepositorio.sumTotalFacturaByFechaEmisionBetween(inicioHoy, finHoy);
         stats.setVentasHoy(totalHoy != null ? totalHoy : 0.0);
 
-        // 3. Ventas de la Semana (Lunes a Domingo o últimos 7 días - Usaremos Inicio de
-        // Semana actual)
-        LocalDateTime inicioSemana = LocalDateTime.now().minusDays(LocalDateTime.now().getDayOfWeek().getValue() - 1)
-                .with(LocalTime.MIN);
-        Double totalSemana = facturaRepositorio.sumTotalFacturaByFechaEmisionBetween(inicioSemana, finHoy);
+        // 3. Ventas de la Semana (Últimos 7 días)
+        LocalDateTime inicioUltimos7Dias = LocalDateTime.now().minusDays(6).with(LocalTime.MIN);
+        Double totalSemana = facturaRepositorio.sumTotalFacturaByFechaEmisionBetween(inicioUltimos7Dias, finHoy);
         stats.setVentasSemana(totalSemana != null ? totalSemana : 0.0);
 
         // 4. Últimas 5 Facturas

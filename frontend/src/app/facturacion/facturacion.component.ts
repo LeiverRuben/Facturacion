@@ -150,9 +150,11 @@ interface FormaPago {
                       <td class="text-end">{{ detalle.precioUnitario | currency:'USD':'symbol':'1.2-2' }}</td>
                       <td class="text-end fw-bold">{{ detalle.subtotal | currency:'USD':'symbol':'1.2-2' }}</td>
                       <td class="text-end">
-                        <button type="button" class="btn-action btn-danger" (click)="removeDetalle(i)" style="padding:4px 8px;">
-                          <i class='bx bx-trash'></i>
-                        </button>
+                        <div class="btn-icon-wrapper" style="justify-content: flex-end;">
+                           <button type="button" class="btn-icon delete" (click)="removeDetalle(i)">
+                             <i class='bx bx-trash'></i>
+                           </button>
+                        </div>
                       </td>
                     </tr>
                   </tbody>
@@ -219,18 +221,21 @@ interface FormaPago {
                 </span>
               </td>
               <td>
-                  <div class="d-flex gap-2">
-                    <button class="btn-action btn-secondary" (click)="viewFactura(factura)" title="Ver Detalles">
+                  <div class="btn-icon-wrapper">
+                    <button class="btn-icon edit" (click)="viewFactura(factura)" title="Ver Detalles">
                       <i class='bx bx-show'></i>
                     </button>
                     <!-- PDF Button -->
-                    <button class="btn-action btn-secondary" (click)="descargarPdf(factura.facturaId!)" title="Imprimir PDF" style="background: #475569; color: white;">
+                    <button class="btn-icon" (click)="descargarPdf(factura.facturaId!)" title="Imprimir PDF" style="color: #475569;">
                       <i class='bx bxs-file-pdf'></i>
                     </button>
-                    <button class="btn-action btn-primary" *ngIf="factura.estadoSri !== 'AUTORIZADO' && factura.estadoSri !== 'ANULADA'" (click)="enviarSri(factura)" title="Enviar al SRI">
+                    <button class="btn-icon" (click)="verXml(factura.facturaId!)" title="Ver XML Firmado" style="color: #475569;">
+                      <i class='bx bx-code-alt'></i>
+                    </button>
+                    <button class="btn-icon edit" *ngIf="factura.estadoSri !== 'AUTORIZADO' && factura.estadoSri !== 'ANULADA'" (click)="enviarSri(factura)" title="Enviar al SRI" style="color:#059669; background:#ecfdf5;">
                       <i class='bx bx-send'></i>
                     </button>
-                    <button class="btn-action btn-danger" *ngIf="factura.estadoSri !== 'ANULADA'" (click)="anularFactura(factura.facturaId!)" title="Anular Factura" style="background-color: #ef4444; color: white;">
+                    <button class="btn-icon delete" *ngIf="factura.estadoSri !== 'ANULADA'" (click)="anularFactura(factura.facturaId!)" title="Anular Factura">
                       <i class='bx bx-x-circle'></i>
                     </button>
                   </div>
@@ -486,6 +491,19 @@ export class FacturacionComponent implements OnInit {
   }
 
   saveFactura() {
+    if (!this.facturaForm.clienteId || this.facturaForm.clienteId === 0) {
+      Swal.fire('Atención', 'Seleccione un cliente', 'warning');
+      return;
+    }
+    if (!this.facturaForm.detalles || this.facturaForm.detalles.length === 0) {
+      Swal.fire('Atención', 'Agregue al menos un producto a la factura', 'warning');
+      return;
+    }
+    if (!this.selectedFormaPagoId) {
+      Swal.fire('Atención', 'Seleccione una forma de pago', 'warning');
+      return;
+    }
+
     const subtotal = this.calcularTotal();
     const ivaPercentage = 0.12;
     const totalIva = subtotal * ivaPercentage;
@@ -549,24 +567,61 @@ export class FacturacionComponent implements OnInit {
   enviarSri(factura: Factura) {
     if (!factura.facturaId) return;
 
-    // Feedback visual inmediato
     factura.estadoSri = 'ENVIANDO...';
 
+    // 1. Enviar al SRI
     this.http.post<any>(`${this.apiUrl}/api/facturas/enviar-sri/${factura.facturaId}`, {}).subscribe({
       next: (response) => {
         console.log('Respuesta SRI:', response);
-        Swal.fire({
-          icon: 'success',
-          title: 'Respuesta SRI',
-          text: response.mensaje
-        });
         this.loadFacturas();
+
+        // 2. Extraer estado de la respuesta (usamos regex o string search porque viene en response.mensaje)
+        // El formato es: "Proceso SRI Completado. Estado: AUTORIZADO. Mensaje: ..."
+        let estado = 'DESCONOCIDO';
+        if (response.mensaje && response.mensaje.includes('Estado: ')) {
+          const parts = response.mensaje.split('Estado: ');
+          if (parts.length > 1) {
+            estado = parts[1].split('.')[0].trim(); // Extrae "AUTORIZADO" o "DEVUELTA"
+          }
+        }
+
+        // 3. Preguntar si enviar correo
+        Swal.fire({
+          icon: 'info', // Usamos info o success dependiendo del estado
+          title: 'Respuesta SRI',
+          text: `Su factura ya fue validada con el SRI con el siguiente estado: ${estado}. ¿Desea enviar a su correo?`,
+          showCancelButton: true,
+          confirmButtonText: 'Sí, enviar',
+          cancelButtonText: 'No'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            this.enviarCorreoManual(factura.facturaId!);
+          }
+        });
+
       },
       error: (error) => {
         console.error('Error enviando al SRI:', error);
         factura.estadoSri = 'ERROR';
         Swal.fire('Error SRI', 'Error al enviar al SRI: ' + (error.error || error.message), 'error');
         this.loadFacturas();
+      }
+    });
+  }
+
+  enviarCorreoManual(facturaId: number) {
+    Swal.fire({
+      title: 'Enviando correo...',
+      didOpen: () => Swal.showLoading()
+    });
+
+    this.http.post(`${this.apiUrl}/api/facturas/${facturaId}/email`, {}).subscribe({
+      next: (res: any) => {
+        Swal.fire('Enviado', res.mensaje || 'Correo enviado exitosamente', 'success');
+      },
+      error: (err) => {
+        const errorMsg = typeof err.error === 'string' ? err.error : (err.error?.mensaje || err.message);
+        Swal.fire('Error', 'No se pudo enviar el correo: ' + errorMsg, 'error');
       }
     });
   }
@@ -651,5 +706,57 @@ export class FacturacionComponent implements OnInit {
         }
       }
     });
+  }
+  verXml(facturaId: number) {
+    this.http.get(`${this.apiUrl}/api/facturas/${facturaId}/xml`, { responseType: 'text' }).subscribe({
+      next: (xmlString) => {
+        const isSigned = xmlString.includes('ds:Signature') || xmlString.includes('SignatureValue');
+
+        Swal.fire({
+          title: '<strong>XML Firmado</strong>',
+          width: 800,
+          html: `
+            <div style="text-align: left; margin-bottom: 10px;">
+              ${isSigned
+              ? '<span class="badge badge-success" style="background-color: #28a745; color: white; padding: 5px 10px; border-radius: 4px;">✔ FIRMA ELECTRÓNICA PRESENTE</span>'
+              : '<span class="badge badge-danger" style="background-color: #dc3545; color: white; padding: 5px 10px; border-radius: 4px;">❌ SIN FIRMA</span>'}
+            </div>
+            <textarea readonly class="form-control" style="width: 100%; height: 300px; font-family: monospace; font-size: 12px; border: 1px solid #ddd; padding: 10px; background-color: #1e293b; color: #f8fafc;">${this.escapeHtml(xmlString)}</textarea>
+          `,
+          showCloseButton: true,
+          showCancelButton: true,
+          focusConfirm: false,
+          confirmButtonText: '<i class="bx bx-download"></i> Descargar',
+          confirmButtonAriaLabel: 'Descargar',
+          cancelButtonText: 'Cerrar',
+        }).then((result) => {
+          if (result.isConfirmed) {
+            this.downloadString(xmlString, `factura_${facturaId}.xml`);
+          }
+        });
+      },
+      error: (err) => {
+        Swal.fire('Info', 'El XML no está disponible (quizás no se ha firmado aún).', 'info');
+      }
+    });
+  }
+
+  escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  downloadString(content: string, fileName: string) {
+    const blob = new Blob([content], { type: 'text/xml' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    window.URL.revokeObjectURL(url);
   }
 }

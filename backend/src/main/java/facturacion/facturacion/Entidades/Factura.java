@@ -44,10 +44,12 @@ public class Factura {
 
     @ManyToOne
     @JoinColumn(name = "cliente_id", nullable = false)
+    @jakarta.validation.constraints.NotNull(message = "El cliente es obligatorio")
     private Cliente cliente;
 
     @ManyToOne
     @JoinColumn(name = "empresa_id", nullable = false)
+    @jakarta.validation.constraints.NotNull(message = "La empresa es obligatoria")
     private Empresa empresa;
 
     @ManyToOne
@@ -55,6 +57,8 @@ public class Factura {
     private SesionCaja sesionCaja;
 
     @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // @jakarta.validation.constraints.NotEmpty(message = "La factura debe tener
+    // detalles") -- Removed to allow initial save
     private List<DetalleFactura> detalles;
 
     @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

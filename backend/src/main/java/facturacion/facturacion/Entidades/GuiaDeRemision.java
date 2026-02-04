@@ -3,6 +3,7 @@ package facturacion.facturacion.Entidades;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import jakarta.validation.constraints.NotBlank;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -13,6 +14,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -32,8 +35,11 @@ public class GuiaDeRemision {
 
     // Info Guía Remisión
     private String dirPartida;
+    @NotBlank(message = "Identificación del transportista es obligatoria")
     private String transportistaIdentificacion;
+    @NotBlank(message = "Razón social del transportista es obligatoria")
     private String transportistaRazonSocial;
+    @NotBlank(message = "Placa es obligatoria")
     private String placa;
     private LocalDate fechaIniTransporte;
     private LocalDate fechaFinTransporte;
@@ -50,5 +56,6 @@ public class GuiaDeRemision {
 
     // Una guía puede tener múltiples destinatarios (puntos de llegada)
     @OneToMany(mappedBy = "guiaDeRemision", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
     private List<DestinatarioGuia> destinatarios;
 }

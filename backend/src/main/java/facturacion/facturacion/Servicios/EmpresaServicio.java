@@ -78,5 +78,7 @@ public class EmpresaServicio {
         e.setRutaFirma(dto.getRutaFirma());
         e.setClaveFirma(dto.getClaveFirma());
         e.setObligadoContabilidad(dto.getObligadoContabilidad());
+        e.setCorreoRemitente(dto.getCorreoRemitente());
+        e.setClaveCorreo(dto.getClaveCorreo());
     }
 }

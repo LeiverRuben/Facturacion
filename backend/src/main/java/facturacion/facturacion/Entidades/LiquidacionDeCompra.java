@@ -13,6 +13,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -45,13 +47,14 @@ public class LiquidacionDeCompra {
     private String mensajeSri;
 
     @ManyToOne
-    @JoinColumn(name = "cliente_id", nullable = false) // Proveedor (aunque se usa Cliente entity)
-    private Cliente proveedor;
+    @JoinColumn(name = "proveedor_id", nullable = false)
+    private Proveedor proveedor;
 
     @ManyToOne
     @JoinColumn(name = "empresa_id", nullable = false)
     private Empresa empresa;
 
     @OneToMany(mappedBy = "liquidacion", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
     private List<DetalleLiquidacion> detalles;
 }

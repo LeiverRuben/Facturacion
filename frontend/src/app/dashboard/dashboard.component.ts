@@ -3,6 +3,8 @@ import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common'; // Importante para *ngIf, *ngFor, pipes
 import { environment } from '../../environments/environment';
+import { BaseChartDirective } from 'ng2-charts';
+import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
 
 interface DashboardStats {
   totalClientes: number;
@@ -14,7 +16,7 @@ interface DashboardStats {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterLink, CommonModule],
+  imports: [RouterLink, CommonModule, BaseChartDirective],
   template: `
     <div class="dashboard-container">
       
@@ -136,10 +138,11 @@ interface DashboardStats {
                     
                     <!-- Gráfico CSS Simple -->
                     <div class="chart-container">
-                        <div *ngFor="let d of diasSemana" class="chart-bar-wrapper">
-                            <div class="chart-bar" [style.height.%]="d.height" [title]="d.valor | currency:'USD'"></div>
-                            <span class="chart-label">{{ d.dia }}</span>
-                        </div>
+                        <canvas baseChart
+                          [data]="barChartData"
+                          [options]="barChartOptions"
+                          [type]="barChartType">
+                        </canvas>
                     </div>
 
                 </div>
@@ -431,8 +434,30 @@ export class DashboardComponent implements OnInit {
   ultimasFacturas: any[] = [];
   ingresosSemanales: number = 0;
 
-  // Para el gráfico (simulado)
-  diasSemana: any[] = [];
+  // Configuracion del Grafico
+  public barChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: { color: 'rgba(0,0,0,0.05)' }
+      },
+      x: {
+        grid: { display: false }
+      }
+    }
+  };
+  public barChartType: ChartType = 'bar';
+  public barChartData: ChartData<'bar'> = {
+    labels: [],
+    datasets: [
+      { data: [], label: 'Ventas', backgroundColor: '#3b82f6', borderRadius: 4, hoverBackgroundColor: '#2563eb' }
+    ]
+  };
 
   constructor(private http: HttpClient) { }
 
@@ -455,14 +480,18 @@ export class DashboardComponent implements OnInit {
 
       // 3. Procesar Gráfico Real
       if (data.ventasUltimaSemana && Array.isArray(data.ventasUltimaSemana)) {
-        // Encontrar valor máximo para escalar la altura (0 - 100%)
-        const maxVal = Math.max(...data.ventasUltimaSemana.map((d: any) => d.total));
-
-        this.diasSemana = data.ventasUltimaSemana.map((d: any) => ({
-          dia: d.dia,
-          valor: d.total,
-          height: maxVal > 0 ? (d.total / maxVal) * 100 : 5 // Mínimo 5% visual si es 0 pero otros tienen datos
-        }));
+        this.barChartData = {
+          labels: data.ventasUltimaSemana.map((d: any) => d.dia),
+          datasets: [
+            {
+              data: data.ventasUltimaSemana.map((d: any) => d.total),
+              label: 'Ventas',
+              backgroundColor: '#3b82f6',
+              borderRadius: 4,
+              hoverBackgroundColor: '#2563eb'
+            }
+          ]
+        };
       }
     });
 

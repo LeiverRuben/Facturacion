@@ -8,6 +8,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.Setter;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 @Entity
 @Getter
@@ -25,7 +26,12 @@ public class DetalleLiquidacion {
     private Double descuento;
     private Double precioTotalSinImpuesto;
 
+    @jakarta.persistence.ManyToOne
+    @JoinColumn(name = "producto_id")
+    private Producto producto;
+
     @ManyToOne
     @JoinColumn(name = "liquidacion_id", nullable = false)
+    @JsonBackReference
     private LiquidacionDeCompra liquidacion;
 }

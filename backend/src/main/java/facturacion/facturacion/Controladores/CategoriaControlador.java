@@ -23,7 +23,7 @@ public class CategoriaControlador {
     private CategoriaServicio categoriaServicio;
 
     @PostMapping
-    public Categoria guardar(@RequestBody Categoria categoria) {
+    public Categoria guardar(@RequestBody @jakarta.validation.Valid Categoria categoria) {
         return categoriaServicio.guardar(categoria);
     }
 
@@ -38,7 +38,7 @@ public class CategoriaControlador {
     }
 
     @PutMapping("/{id}")
-    public Categoria actualizar(@PathVariable Long id, @RequestBody Categoria categoria) {
+    public Categoria actualizar(@PathVariable Long id, @RequestBody @jakarta.validation.Valid Categoria categoria) {
         return categoriaServicio.actualizar(id, categoria);
     }
 

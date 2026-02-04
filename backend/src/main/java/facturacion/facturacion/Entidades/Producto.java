@@ -25,15 +25,19 @@ public class Producto {
   private String productoSerial;
 
   @Column(name = "producto_nombre")
+  @jakarta.validation.constraints.NotBlank(message = "El nombre del producto es obligatorio")
   private String productoNombre;
 
   @Column(name = "producto_descripcion")
   private String productoDescripcion;
 
   @Column(name = "producto_precio")
+  @jakarta.validation.constraints.NotNull(message = "El precio es obligatorio")
+  @jakarta.validation.constraints.Min(value = 0, message = "El precio no puede ser negativo")
   private Double productoPrecio;
 
   @Column(name = "producto_stock")
+  @jakarta.validation.constraints.Min(value = 0, message = "El stock no puede ser negativo")
   private Integer productoStock = 0;
 
   @Column(name = "producto_tasa")

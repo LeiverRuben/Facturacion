@@ -1,0 +1,93 @@
+<div class="page-header slide-in-bottom">
+    <div>
+        <h1 class="page-title"><i class='bx bx-receipt'></i> Gestión de Retenciones</h1>
+        <p class="page-subtitle">Administra, firma y envía tus comprobantes de retención al SRI.</p>
+    </div>
+</div>
+
+<div class="card-premium slide-in-bottom">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h3 class="card-title">Listado de Retenciones</h3>
+        <div class="input-icon-wrapper" style="width: 300px;">
+            <i class='bx bx-search'></i>
+            <input type="text" class="form-control" placeholder="Buscar por proveedor, ruc o secuencial..."
+                [(ngModel)]="filtro">
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div class="table-container">
+            <table class="table-modern">
+                <thead>
+                    <tr>
+                        <th>Secuencial</th>
+                        <th>Fecha Emisión</th>
+                        <th>Proveedor</th>
+                        <th>Estado SRI</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let r of retencionesFiltradas">
+                        <td><span class="badge-pill badge-neutral">{{ r.secuencial }}</span></td>
+                        <td>{{ r.fechaEmision | date:'dd/MM/yyyy HH:mm' }}</td>
+                        <td>
+                            <div class="fw-bold">{{ r.proveedor?.razonSocial }}</div>
+                            <small class="text-muted">{{ r.proveedor?.ruc }}</small>
+                        </td>
+                        <td>
+                            <span class="badge-pill" [ngClass]="{
+                                'badge-success': r.estadoSri === 'AUTORIZADO',
+                                'badge-warning': r.estadoSri === 'PENDIENTE' || r.estadoSri === 'RECIBIDA' || r.estadoSri === 'EN_PROCESO',
+                                'badge-danger': r.estadoSri === 'DEVUELTA' || r.estadoSri === 'ANULADA' || r.estadoSri === 'RECHAZADA' || r.estadoSri === 'NO AUTORIZADO'
+                            }">
+                                {{ r.estadoSri || 'PENDIENTE' }}
+                            </span>
+                            <br>
+                            <span class="badge-pill mt-1" [ngClass]="{
+                                'badge-info': !r.estadoInterno || r.estadoInterno === 'PENDIENTE',
+                                'badge-success': r.estadoInterno === 'PAGADO'
+                            }" style="font-size: 0.7rem; padding: 2px 6px;">
+                                {{ r.estadoInterno || 'PENDIENTE PAGO' }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center gap-2">
+                                <button class="btn-icon" (click)="descargarPdf(r.id)" title="Imprimir PDF">
+                                    <i class='bx bxs-file-pdf text-danger'></i>
+                                </button>
+
+                                <!-- XML View -->
+                                <button class="btn-icon" (click)="verXml(r.id)" title="Ver XML Firmado">
+                                    <i class='bx bx-code-alt text-secondary'></i>
+                                </button>
+
+                                <button class="btn-icon"
+                                    [title]="r.estadoInterno === 'PAGADO' ? 'Marcar como Pendiente' : 'Marcar como Pagado/Cancelado'"
+                                    (click)="toggleEstadoInterno(r)">
+                                    <i class='bx'
+                                        [ngClass]="r.estadoInterno === 'PAGADO' ? 'bx-money text-success' : 'bx-time-five text-muted'"></i>
+                                </button>
+
+                                <button *ngIf="r.estadoSri !== 'AUTORIZADO'" class="btn-icon" (click)="enviarSri(r.id)"
+                                    title="Enviar al SRI">
+                                    <i class='bx bx-send text-primary'></i>
+                                </button>
+
+                                <span *ngIf="r.estadoSri === 'AUTORIZADO'" class="text-success small">
+                                    <i class='bx bx-check-double'></i>
+                                </span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr *ngIf="retencionesFiltradas.length === 0">
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class='bx bx-receipt fs-1 mb-2'></i>
+                            <p>No se encontraron retenciones.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

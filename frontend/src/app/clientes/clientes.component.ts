@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../environments/environment';
+import Swal from 'sweetalert2';
 
 interface Cliente {
   clienteId?: number;
@@ -108,12 +109,12 @@ interface Cliente {
                 </span>
               </td>
               <td>
-                <div class="d-flex gap-2">
-                  <button class="btn-action btn-secondary" (click)="editCliente(cliente)" title="Editar">
-                    <i class='bx bx-edit'></i>
+                <div class="btn-icon-wrapper">
+                  <button class="btn-icon edit" (click)="editCliente(cliente)" title="Editar">
+                    <i class='bx bx-edit-alt'></i>
                   </button>
-                  <button class="btn-action btn-danger" (click)="deleteCliente(cliente.clienteId!)" title="Eliminar">
-                    <i class='bx bx-trash'></i>
+                  <button class="btn-icon delete" (click)="deleteCliente(cliente.clienteId!)" title="Eliminar">
+                    <i class='bx bx-trash-alt'></i>
                   </button>
                 </div>
               </td>
@@ -170,26 +171,39 @@ export class ClientesComponent implements OnInit {
   }
 
   saveCliente() {
+    if (!this.clienteForm.identificacion || !this.clienteForm.clienteNombre || !this.clienteForm.clienteApellido || !this.clienteForm.clienteEmail) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Faltan Datos',
+        text: 'Por favor complete Identificación, Nombre, Apellido y Email.'
+      });
+      return;
+    }
+
     if (this.editingCliente && this.clienteForm.clienteId) {
       // Actualizar cliente existente
       this.http.put<Cliente>(`${this.apiUrl}/api/cliente/${this.clienteForm.clienteId}`, this.clienteForm).subscribe({
         next: () => {
+          Swal.fire('Actualizado', 'Cliente actualizado correctamente', 'success');
           this.loadClientes();
           this.cancelEdit();
         },
         error: (error) => {
           console.error('Error updating client:', error);
+          Swal.fire('Error', 'No se pudo actualizar el cliente', 'error');
         }
       });
     } else {
       // Crear nuevo cliente usando el endpoint simple
       this.http.post<Cliente>(`${this.apiUrl}/api/cliente/simple`, this.clienteForm).subscribe({
         next: () => {
+          Swal.fire('Guardado', 'Cliente registrado correctamente', 'success');
           this.loadClientes();
           this.cancelEdit();
         },
         error: (error) => {
           console.error('Error creating client:', error);
+          Swal.fire('Error', 'No se pudo crear el cliente', 'error');
         }
       });
     }

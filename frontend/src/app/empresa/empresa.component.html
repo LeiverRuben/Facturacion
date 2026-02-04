@@ -1,0 +1,117 @@
+<div class="empresa-container">
+    <header class="page-header">
+        <h2 class="page-title">Configuración de Empresa</h2>
+        <p class="page-subtitle">Datos tributarios y configuración de facturación electrónica</p>
+    </header>
+
+    <div class="card-premium">
+        <form (ngSubmit)="onSubmit()">
+
+            <h4 class="section-title mb-3">Datos Generales</h4>
+            <div class="row mb-4">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Razón Social</label>
+                    <input type="text" class="form-control" [(ngModel)]="empresa.razonSocial" name="razonSocial"
+                        required placeholder="Ej: Mi Empresa S.A.">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Nombre Comercial</label>
+                    <input type="text" class="form-control" [(ngModel)]="empresa.nombreComercial" name="nombreComercial"
+                        placeholder="Ej: Super Tienda">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">RUC</label>
+                    <input type="text" class="form-control" [(ngModel)]="empresa.ruc" name="ruc" required maxlength="13"
+                        placeholder="Ej: 0992345678001">
+                </div>
+                <div class="col-md-8 mb-3">
+                    <label class="form-label">Dirección Matriz</label>
+                    <input type="text" class="form-control" [(ngModel)]="empresa.dirMatriz" name="dirMatriz" required
+                        placeholder="Ej: Av. Amazonas y Naciones Unidas">
+                </div>
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Dirección Establecimiento</label>
+                    <input type="text" class="form-control" [(ngModel)]="empresa.dirEstablecimiento"
+                        name="dirEstablecimiento" required placeholder="Ej: Av. Amazonas (Sucursal)">
+                </div>
+            </div>
+
+            <h4 class="section-title mb-3">Configuración Tributaria (SRI)</h4>
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Establecimiento</label>
+                    <input type="text" class="form-control" [(ngModel)]="empresa.establecimiento" name="establecimiento"
+                        maxlength="3">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Pto. Emisión</label>
+                    <input type="text" class="form-control" [(ngModel)]="empresa.puntoEmision" name="puntoEmision"
+                        maxlength="3">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Obligado Contabilidad</label>
+                    <select class="form-control" [(ngModel)]="empresa.obligadoContabilidad" name="obligadoContabilidad">
+                        <option value="SI">SI</option>
+                        <option value="NO">NO</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Ambiente</label>
+                    <select class="form-control" [(ngModel)]="empresa.ambiente" name="ambiente">
+                        <option [ngValue]="1">Pruebas</option>
+                        <option [ngValue]="2">Producción</option>
+                    </select>
+                </div>
+            </div>
+
+            <h4 class="section-title mb-3">Firma Electrónica</h4>
+            <div class="row mb-4">
+                <div class="col-md-7 mb-3">
+                    <label class="form-label">Ruta Archivo (.p12)</label>
+                    <input type="text" class="form-control" [(ngModel)]="empresa.rutaFirma" name="rutaFirma"
+                        placeholder="Ej: C:/Firmas/mi_empresa_2026.p12">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Contraseña Firma</label>
+                    <div class="input-group">
+                        <input [type]="mostrarClave ? 'text' : 'password'" class="form-control"
+                            [(ngModel)]="empresa.claveFirma" name="claveFirma">
+                        <button class="btn btn-outline-secondary" type="button" (click)="mostrarClave = !mostrarClave">
+                            <i class='bx' [ngClass]="mostrarClave ? 'bx-show' : 'bx-hide'"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-3 d-flex align-items-end">
+                    <button type="button" class="btn btn-secondary w-100" (click)="testFirma()">
+                        <i class='bx bx-check-shield'></i> Probar
+                    </button>
+                </div>
+                <div class="col-12">
+                    <small class="text-muted">Ruta absoluta en el servidor.</small>
+                </div>
+            </div>
+
+            <h4 class="section-title mb-3">Configuración de Correo (Notificaciones)</h4>
+            <div class="row mb-4">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Correo Remitente (Gmail/Outlook)</label>
+                    <input type="email" class="form-control" [(ngModel)]="empresa.correoRemitente"
+                        name="correoRemitente" placeholder="Ej: sistema@gmail.com">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Clave de Aplicación (SMTP)</label>
+                    <input type="password" class="form-control" [(ngModel)]="empresa.claveCorreo" name="claveCorreo"
+                        placeholder="Contraseña de aplicación generada">
+                    <small class="text-muted">Para Gmail, use "Contraseña de Aplicación".</small>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn-action btn-primary">
+                    <i class='bx bx-save'></i> Guardar Cambios
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>

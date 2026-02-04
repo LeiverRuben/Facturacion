@@ -25,9 +25,21 @@
           </a>
         </li>
         <li>
+          <a routerLink="/categorias" routerLinkActive="active" class="nav-item">
+            <i class='bx bxs-category'></i>
+            <span>Categorías</span>
+          </a>
+        </li>
+        <li>
           <a routerLink="/productos" routerLinkActive="active" class="nav-item">
             <i class='bx bxs-package'></i>
             <span>Productos</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/kardex" routerLinkActive="active" class="nav-item">
+            <i class='bx bx-history'></i>
+            <span>Movimientos / Kardex</span>
           </a>
         </li>
         <li>
@@ -46,6 +58,30 @@
           <a routerLink="/compras" routerLinkActive="active" class="nav-item">
             <i class='bx bxs-cart-download'></i>
             <span>Ingreso Compras</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/retenciones" routerLinkActive="active" class="nav-item">
+            <i class='bx bx-receipt'></i>
+            <span>Retenciones</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/guias-remision" routerLinkActive="active" class="nav-item">
+            <i class='bx bxs-truck'></i>
+            <span>Guías Remisión</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/notas-credito" routerLinkActive="active" class="nav-item">
+            <i class='bx bxs-file-pdf'></i>
+            <span>Notas de Crédito</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/liquidaciones" routerLinkActive="active" class="nav-item">
+            <i class='bx bx-receipt'></i>
+            <span>Liquidación de Compra</span>
           </a>
         </li>
         <li>
@@ -73,6 +109,11 @@
             <i class='bx' [ngClass]="isDarkMode ? 'bx-sun' : 'bx-moon'"></i>
             <span>{{ isDarkMode ? 'Modo Claro' : 'Modo Oscuro' }}</span>
           </button>
+          <a routerLink="/empresa" class="settings-item"
+            style="text-decoration:none; color:inherit; display:flex; gap:10px; align-items:center;">
+            <i class='bx bxs-business'></i>
+            <span>Empresa</span>
+          </a>
         </div>
       </div>
 

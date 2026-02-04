@@ -1,0 +1,27 @@
+/* Reutilizando estilos globales de la plantilla */
+.badge-pill {
+    padding: 0.35em 0.8em;
+    border-radius: 50rem;
+    font-size: 0.75em;
+    font-weight: 600;
+}
+
+.badge-neutral {
+    background-color: #f3f4f6;
+    color: #4b5563;
+}
+
+.badge-success {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.badge-warning {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.badge-danger {
+    background-color: #fee2e2;
+    color: #b91c1c;
+}

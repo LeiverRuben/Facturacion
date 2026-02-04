@@ -12,7 +12,7 @@ import lombok.Setter;
 @Setter
 
 public class Empresa {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long empresaId;
@@ -24,18 +24,22 @@ public class Empresa {
     private String dirMatriz;
     private String dirEstablecimiento;
 
-    private String establecimiento; 
+    private String establecimiento;
     private String puntoEmision;
 
-    private Integer ambiente;      // 1 pruebas, 2 producción
-    private Integer tipoEmision;   // 1 normal
+    private Integer ambiente; // 1 pruebas, 2 producción
+    private Integer tipoEmision; // 1 normal
 
-    private String obligadoContabilidad;  // SI / NO
+    private String obligadoContabilidad; // SI / NO
 
-    private String rutaFirma;   // Ej: C:/certificados/firma.p12
-    private String claveFirma;  // password archivo p12
+    private String rutaFirma; // Ej: C:/certificados/firma.p12
+    private String claveFirma; // password archivo p12
 
-    private String contribuyenteEspecial;  // opcional
+    private String contribuyenteEspecial; // opcional
     private String resolucion;
-    
+
+    // Configuración Correo
+    private String correoRemitente;
+    private String claveCorreo; // App Password de Gmail
+
 }

@@ -24,12 +24,12 @@ public class ClienteControlador {
     private ClienteServicio clienteServicio;
 
     @PostMapping
-    public Cliente guardar(@RequestBody ClienteConDocumentoDto cliente) {
+    public Cliente guardar(@RequestBody @jakarta.validation.Valid ClienteConDocumentoDto cliente) {
         return clienteServicio.guardar(cliente);
     }
 
     @PostMapping("/simple")
-    public Cliente guardarSimple(@RequestBody Cliente cliente) {
+    public Cliente guardarSimple(@RequestBody @jakarta.validation.Valid Cliente cliente) {
         return clienteServicio.guardarSimple(cliente);
     }
 
@@ -44,7 +44,8 @@ public class ClienteControlador {
     }
 
     @PutMapping("/{id}")
-    public Cliente actualizar(@PathVariable Long id, @RequestBody Cliente clienteActualizado) {
+    public Cliente actualizar(@PathVariable Long id,
+            @RequestBody @jakarta.validation.Valid Cliente clienteActualizado) {
         // ESTE MÉTODO FALTABA O NO FUE DETECTADO POR SPRING
         return clienteServicio.actualizar(id, clienteActualizado);
     }

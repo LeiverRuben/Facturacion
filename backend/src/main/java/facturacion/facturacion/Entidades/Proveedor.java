@@ -16,9 +16,16 @@ public class Proveedor {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @jakarta.validation.constraints.NotBlank(message = "La razón social es obligatoria")
     private String razonSocial;
+
+    @jakarta.validation.constraints.NotBlank(message = "El RUC es obligatorio")
     private String ruc;
+
+    @jakarta.validation.constraints.Email(message = "El email no es válido")
+    @jakarta.validation.constraints.NotBlank(message = "El email es obligatorio")
     private String email;
+
     private String telefono;
     private String direccion;
 

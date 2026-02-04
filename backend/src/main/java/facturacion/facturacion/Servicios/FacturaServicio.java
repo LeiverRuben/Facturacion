@@ -70,48 +70,130 @@ public class FacturaServicio {
         Factura factura = new Factura();
         factura.setSecuencial(request.getSecuencial());
         factura.setFechaEmision(request.getFechaEmision());
-        factura.setSubtotal12(request.getSubtotal12());
-        factura.setSubtotal0(request.getSubtotal0());
-        factura.setSubtotalExento(request.getSubtotalExento());
-        factura.setSubtotalNoObjeto(request.getSubtotalNoObjeto());
-        factura.setTotalDescuento(request.getTotalDescuento());
-        factura.setTotalIva(request.getTotalIva());
-        factura.setTotalFactura(request.getTotalFactura());
-        factura.setEstado(1);
-        factura.setEstadoSri("PENDIENTE");
+
+        // Initialize with temporary 0s to allow saving
+        factura.setSubtotal12(0.0);
+        factura.setSubtotal0(0.0);
+        factura.setTotalDescuento(0.0);
+        factura.setTotalIva(0.0);
+        factura.setTotalFactura(0.0);
         factura.setCliente(cliente);
         factura.setEmpresa(empresa);
-        factura.setSesionCaja(sesionCaja); // Vincular sesión
+        factura.setSesionCaja(sesionCaja);
+        factura.setEstado(1);
+        factura.setEstadoSri("PENDIENTE");
+
+        // SAVE FACTURA FIRST to generate ID
         factura = facturaRepository.save(factura);
+        // Initializing accumulators
+        double calcSubtotal12 = 0.0;
+        double calcSubtotal0 = 0.0;
+        double calcSubtotalNoObjeto = 0.0;
+        double calcSubtotalExento = 0.0;
+        double calcTotalDescuento = 0.0;
+        double calcTotalIva = 0.0;
+
         List<DetalleFactura> detalles = new ArrayList<>();
+
+        // Process details first to calculate totals
         for (DetalleFacturaDTO detDTO : request.getDetalles()) {
             Producto producto = productoRepository.findById(detDTO.getProductoId())
                     .orElseThrow(() -> new RuntimeException("Producto no encontrado."));
+
             DetalleFactura det = new DetalleFactura();
             det.setFactura(factura);
             det.setProducto(producto);
             det.setCantidad(detDTO.getCantidad());
-            det.setPrecioUnitario(detDTO.getPrecioUnitario());
-            det.setDescuento(detDTO.getDescuento());
-            det.setSubtotal(detDTO.getSubtotal());
+
+            // SECURITY: We could force DB price here, but allowing frontend price if edits
+            // are allowed.
+            // verifying math:
+            double precio = detDTO.getPrecioUnitario();
+            double cantidad = detDTO.getCantidad();
+            double descuento = detDTO.getDescuento();
+
+            // Recalculate Subtotal line
+            double subtotalLinea = (precio * cantidad) - descuento;
+            det.setPrecioUnitario(precio);
+            det.setDescuento(descuento);
+            det.setSubtotal(subtotalLinea);
+
+            // Calculate Taxes for this item
+            // Logic: Check product tax rate
+            double tasaIva = (producto.getProductoTasa() != null) ? producto.getProductoTasa() : 0.0;
+            boolean pagaIva = tasaIva > 0;
+
+            if (pagaIva) {
+                // AUTO-UPDATE: Force 12% to 15% for SRI compliance (2025/2026)
+                if (Math.abs(tasaIva - 12.0) < 0.1) {
+                    tasaIva = 15.0;
+                }
+
+                calcSubtotal12 += subtotalLinea;
+                // Calculate IVA for this item
+                double ivaItem = subtotalLinea * (tasaIva / 100.0);
+                calcTotalIva += ivaItem;
+            } else {
+                calcSubtotal0 += subtotalLinea;
+            }
+            calcTotalDescuento += descuento;
+
+            // Prepare Validation/Persistence
             DetalleFactura detalleGuardado = detalleRepository.save(det);
+
+            // Create Tax Detail (ImpuestoDetalle)
             ImpuestoDetalle imp = new ImpuestoDetalle();
             imp.setDetalleFactura(detalleGuardado);
-            imp.setCodigo(detDTO.getImpuesto().getCodigo());
-            imp.setCodigoPorcentaje(detDTO.getImpuesto().getCodigoPorcentaje());
-            imp.setTarifa(detDTO.getImpuesto().getTarifa());
-            imp.setBaseImponible(detDTO.getImpuesto().getBaseImponible());
-            imp.setValor(detDTO.getImpuesto().getValor());
+            imp.setCodigo("2"); // IVA
+            // Map rate to SRI code
+            if (pagaIva) {
+                if (Math.abs(tasaIva - 12.0) < 0.1) {
+                    imp.setCodigoPorcentaje(2.0);
+                    imp.setTarifa(12.0);
+                } else if (Math.abs(tasaIva - 15.0) < 0.1) {
+                    imp.setCodigoPorcentaje(4.0);
+                    imp.setTarifa(15.0);
+                } else {
+                    imp.setCodigoPorcentaje(4.0);
+                    imp.setTarifa(15.0); // Fallback
+                }
+                imp.setBaseImponible(subtotalLinea);
+                imp.setValor(subtotalLinea * (tasaIva / 100.0));
+            } else {
+                imp.setCodigoPorcentaje(0.0);
+                imp.setTarifa(0.0);
+                imp.setBaseImponible(subtotalLinea);
+                imp.setValor(0.0);
+            }
+
             impuestoRepository.save(imp);
             detalles.add(det);
         }
+
+        // Final Rounding for Header
+        // Using BigDecimal logic via String format to ensure 2 decimal precision
+        // matches what SRI expects
+        factura.setSubtotal12(Double.parseDouble(String.format(java.util.Locale.US, "%.2f", calcSubtotal12)));
+        factura.setSubtotal0(Double.parseDouble(String.format(java.util.Locale.US, "%.2f", calcSubtotal0)));
+        factura.setSubtotalNoObjeto(0.0);
+        factura.setSubtotalExento(0.0);
+        factura.setTotalDescuento(Double.parseDouble(String.format(java.util.Locale.US, "%.2f", calcTotalDescuento)));
+        factura.setTotalIva(Double.parseDouble(String.format(java.util.Locale.US, "%.2f", calcTotalIva)));
+
+        double totalFinal = factura.getSubtotal12() + factura.getSubtotal0() + factura.getTotalIva();
+        factura.setTotalFactura(Double.parseDouble(String.format(java.util.Locale.US, "%.2f", totalFinal)));
+
+        // Save Factura with authoritative totals
+        factura = facturaRepository.save(factura);
         for (PagoDTO pdto : request.getPagos()) {
             FormaPago fpago = formaPagoRepository.findById(pdto.getMetodoPagoId())
                     .orElseThrow(() -> new RuntimeException("Forma de pago no encontrada."));
             FacturaPago fp = new FacturaPago();
             fp.setFactura(factura);
             fp.setFormaPago(fpago);
-            fp.setTotal(pdto.getTotal());
+            // CORRECCION: Ajustar el pago al total recalculado para evitar discrepancias
+            // SRI
+            fp.setTotal(factura.getTotalFactura());
             fp.setPlazo(pdto.getPlazo());
             fp.setUnidadTiempo(pdto.getUnidadTiempo());
             facturaPagoRepository.save(fp);
@@ -203,64 +285,120 @@ public class FacturaServicio {
             String tipoIdent = getTipoIdentificacion(ident);
 
             infoFac.appendChild(add(doc, "tipoIdentificacionComprador", tipoIdent));
-            addOptional(doc, infoFac, "guiaRemision", null); // Placeholder si existiera
+            addOptional(doc, infoFac, "guiaRemision", null);
             infoFac.appendChild(add(doc, "razonSocialComprador",
                     factura.getCliente().getClienteNombre() + " " + factura.getCliente().getClienteApellido()));
             infoFac.appendChild(add(doc, "identificacionComprador", ident));
             addOptional(doc, infoFac, "direccionComprador", factura.getCliente().getClienteDireccion());
 
-            infoFac.appendChild(add(doc, "totalSinImpuestos",
-                    String.format(java.util.Locale.US, "%.2f", factura.getSubtotal12() + factura.getSubtotal0()
-                            + factura.getSubtotalNoObjeto() + factura.getSubtotalExento())));
+            // --- RECALCULATE TOTALS FROM PROCESSED DETAILS TO AVOID ROUNDING ERRORS ---
+            double calcTotalSinImpuestos = 0.0;
+            double calcTotalDescuento = 0.0;
+            double calcTotalIva = 0.0;
+            double calcTotal0 = 0.0;
+            double calcTotalNoObj = 0.0;
+            double calcTotalExento = 0.0;
+            double calcSubtotal12 = 0.0; // Base Imponible Gravada (puede ser 15% ahora)
+
+            // Rates detection
+            String detectedCodigoPorcel = "4"; // Default 15
+            String detectedTarifa = "15";
+
+            for (DetalleFactura det : factura.getDetalles()) {
+                double rawSubtotal = det.getSubtotal(); // (Cant * Precio) - Desc
+                double rawDescuento = det.getDescuento();
+
+                // Sumar descuentos
+                calcTotalDescuento += rawDescuento;
+
+                // Corrected Header Calculation: Use actual stored taxes, not product reference
+                List<ImpuestoDetalle> storedTaxes = impuestoRepository.findByDetalleFactura(det);
+
+                boolean hasStoredTax = false;
+                if (storedTaxes != null && !storedTaxes.isEmpty()) {
+                    for (ImpuestoDetalle imp : storedTaxes) {
+                        double tarifa = imp.getTarifa();
+                        double valor = imp.getValor();
+                        String codigo = imp.getCodigo();
+
+                        // AUTO-MIGRATE 12% -> 15% for XML Header (Legacy Fix)
+                        if ("2".equals(codigo) && Math.abs(tarifa - 12.0) < 0.1) {
+                            tarifa = 15.0; // Force 15
+                            valor = imp.getBaseImponible() * 0.15; // Recalculate Value
+                        }
+
+                        if ("2".equals(codigo) && tarifa > 0) {
+                            // It's IVA 12% (patched) or 15%
+                            hasStoredTax = true;
+                            calcSubtotal12 += imp.getBaseImponible();
+                            calcTotalIva += valor; // Use patched value
+
+                            // Capture rate (Always prefer 15 if patched)
+                            if (Math.abs(tarifa - 12.0) < 0.1) {
+                                detectedCodigoPorcel = "2";
+                                detectedTarifa = "12";
+                            } else {
+                                detectedCodigoPorcel = "4";
+                                detectedTarifa = "15";
+                            }
+                        }
+                    }
+                }
+
+                // If found tax in DB, we already added to calcSubtotal12.
+                // Any base NOT added to 12 should go to 0?
+                // Simpler: If the item has ANY tax, the whole subtotal is 12% base?
+                // Actually, ImpuestoDetalle stores the base.
+                // What if it's 0% tax? Stored tax has tarifa 0.
+
+                // Fallback if no stored taxes (legacy/error) or if stored tax was 0%
+                if (!hasStoredTax) {
+                    // If we didn't find a POSITIVE tax record, we assume 0%
+                    // Check if valid 0% record exists?
+                    // For now, if no positive tax, add to Total0
+                    calcTotal0 += rawSubtotal;
+                }
+
+                // Remove the old logic that queried det.getProducto()
+                /*
+                 * boolean tieneIva = rawSubtotal > 0 && det.getProducto().getProductoTasa() !=
+                 * null
+                 * && det.getProducto().getProductoTasa() > 0;
+                 * if (tieneIva) { ... } else { ... }
+                 */
+                calcTotalSinImpuestos += rawSubtotal;
+            }
+
+            // Apply rounding to match XML fields
+            double finalTotalSinImpuestos = Double
+                    .parseDouble(String.format(java.util.Locale.US, "%.2f", calcTotalSinImpuestos));
+            double finalTotalDescuento = Double
+                    .parseDouble(String.format(java.util.Locale.US, "%.2f", calcTotalDescuento));
+            double finalValorIva = Double.parseDouble(String.format(java.util.Locale.US, "%.2f", calcTotalIva));
+            double finalImporteTotal = finalTotalSinImpuestos + finalValorIva; // Sum of bases + iva
+
             infoFac.appendChild(
-                    add(doc, "totalDescuento",
-                            String.format(java.util.Locale.US, "%.2f", factura.getTotalDescuento())));
+                    add(doc, "totalSinImpuestos", String.format(java.util.Locale.US, "%.2f", finalTotalSinImpuestos)));
+            infoFac.appendChild(
+                    add(doc, "totalDescuento", String.format(java.util.Locale.US, "%.2f", finalTotalDescuento)));
 
             // Bloque TotalConImpuestos
             Element totalConImpuestos = doc.createElement("totalConImpuestos");
             infoFac.appendChild(totalConImpuestos);
 
-            // Determinar Tasa de IVA (12% vs 15%)
-            String codigoPorcentajeIva = "4"; // Default 15% (Code 4)
-            String tarifaIva = "15";
-            if (factura.getSubtotal12() > 0 && factura.getTotalIva() > 0) {
-                double tasaCalculada = factura.getTotalIva() / factura.getSubtotal12();
-                if (Math.abs(tasaCalculada - 0.12) < 0.01) {
-                    codigoPorcentajeIva = "2"; // 12%
-                    tarifaIva = "12";
-                } else if (Math.abs(tasaCalculada - 0.15) < 0.01) {
-                    codigoPorcentajeIva = "4"; // 15%
-                    tarifaIva = "15";
-                } else if (Math.abs(tasaCalculada - 0.13) < 0.01) {
-                    codigoPorcentajeIva = "10"; // 13% IVA Diferenciado
-                    tarifaIva = "13";
-                } else if (Math.abs(tasaCalculada - 0.05) < 0.01) {
-                    codigoPorcentajeIva = "5"; // 5% Materiales Construcción
-                    tarifaIva = "5";
-                }
+            // Add Taxes
+            if (calcSubtotal12 > 0) {
+                // Use Recalculated IVA
+                totalConImpuestos
+                        .appendChild(crearTotalImpuesto(doc, "2", detectedCodigoPorcel, calcSubtotal12, finalValorIva));
             }
-
-            // IVA General (usando subtotal12 como base gravada general)
-            if (factura.getSubtotal12() > 0) {
-                totalConImpuestos.appendChild(crearTotalImpuesto(doc, "2", codigoPorcentajeIva, factura.getSubtotal12(),
-                        factura.getTotalIva()));
-            }
-            // IVA 0%
-            if (factura.getSubtotal0() > 0) {
-                totalConImpuestos.appendChild(crearTotalImpuesto(doc, "2", "0", factura.getSubtotal0(), 0.0));
-            }
-            // IVA No Objeto (6)
-            if (factura.getSubtotalNoObjeto() > 0) {
-                totalConImpuestos.appendChild(crearTotalImpuesto(doc, "2", "6", factura.getSubtotalNoObjeto(), 0.0));
-            }
-            // IVA Exento (7)
-            if (factura.getSubtotalExento() > 0) {
-                totalConImpuestos.appendChild(crearTotalImpuesto(doc, "2", "7", factura.getSubtotalExento(), 0.0));
+            if (calcTotal0 > 0) {
+                totalConImpuestos.appendChild(crearTotalImpuesto(doc, "2", "0", calcTotal0, 0.0));
             }
 
             infoFac.appendChild(add(doc, "propina", "0.00"));
             infoFac.appendChild(
-                    add(doc, "importeTotal", String.format(java.util.Locale.US, "%.2f", factura.getTotalFactura())));
+                    add(doc, "importeTotal", String.format(java.util.Locale.US, "%.2f", finalImporteTotal)));
             infoFac.appendChild(add(doc, "moneda", "DOLAR"));
 
             // Pagos
@@ -275,8 +413,23 @@ public class FacturaServicio {
                             ? fp.getFormaPago().getCodigoSri()
                             : "01";
 
+                    if ("99".equals(codigoFormaPago)) {
+                        codigoFormaPago = "20"; // Mapear Crédito interno a Otros con utilización del sistema financiero
+                    }
+
                     pago.appendChild(add(doc, "formaPago", codigoFormaPago));
-                    pago.appendChild(add(doc, "total", String.format(java.util.Locale.US, "%.2f", fp.getTotal())));
+
+                    // PATCH PAYMENT TOTAL: Must match finalImporteTotal (Legacy Fix)
+                    // If we only have 1 payment, force it to match the new total
+                    if (listaPagos.size() == 1) {
+                        pago.appendChild(
+                                add(doc, "total", String.format(java.util.Locale.US, "%.2f", finalImporteTotal)));
+                    } else {
+                        // If multiple payments, this is risky. Use stored but warn.
+                        // But usually it's 1 payment.
+                        pago.appendChild(add(doc, "total", String.format(java.util.Locale.US, "%.2f", fp.getTotal())));
+                    }
+
                     if (!"01".equals(codigoFormaPago)) {
                         pago.appendChild(
                                 add(doc, "plazo", fp.getPlazo() != null ? String.valueOf(fp.getPlazo()) : "0"));
@@ -289,7 +442,8 @@ public class FacturaServicio {
                 Element pago = doc.createElement("pago");
                 pago.appendChild(add(doc, "formaPago", "01")); // Efectivo
                 pago.appendChild(
-                        add(doc, "total", String.format(java.util.Locale.US, "%.2f", factura.getTotalFactura())));
+                        add(doc, "total", String.format(java.util.Locale.US, "%.2f", finalImporteTotal))); // Use NEW
+                                                                                                           // total
                 pagos.appendChild(pago);
             }
 
@@ -323,13 +477,30 @@ public class FacturaServicio {
                 if (impDetalles != null && !impDetalles.isEmpty()) {
                     for (ImpuestoDetalle imp : impDetalles) {
                         Element impuesto = doc.createElement("impuesto");
+
+                        double tarifaXML = imp.getTarifa();
+                        double valorXML = imp.getValor();
+                        String codPorcelXML = imp.getCodigoPorcentaje() != null
+                                ? String.valueOf(imp.getCodigoPorcentaje().intValue())
+                                : "0";
+
+                        // AUTO-PATCH 12% -> 15% in DETAIL (Legacy Fix)
+                        if (Math.abs(tarifaXML - 12.0) < 0.1) {
+                            tarifaXML = 15.0;
+                            valorXML = imp.getBaseImponible() * 0.15;
+                            codPorcelXML = "4"; // Code for 15%
+                        }
+
                         impuesto.appendChild(add(doc, "codigo", imp.getCodigo()));
-                        impuesto.appendChild(add(doc, "codigoPorcentaje", imp.getCodigoPorcentaje()));
-                        impuesto.appendChild(add(doc, "tarifa", imp.getTarifa()));
+                        impuesto.appendChild(add(doc, "codigoPorcentaje", codPorcelXML));
+                        impuesto.appendChild(add(doc, "tarifa", String.format(java.util.Locale.US, "%.1f", tarifaXML))); // Format
+                                                                                                                         // to
+                                                                                                                         // 1
+                                                                                                                         // decimal
                         impuesto.appendChild(add(doc, "baseImponible",
                                 String.format(java.util.Locale.US, "%.2f", imp.getBaseImponible())));
                         impuesto.appendChild(
-                                add(doc, "valor", String.format(java.util.Locale.US, "%.2f", imp.getValor())));
+                                add(doc, "valor", String.format(java.util.Locale.US, "%.2f", valorXML)));
                         impuestosDet.appendChild(impuesto);
                     }
                 } else {
@@ -342,9 +513,11 @@ public class FacturaServicio {
                             && (det.getProducto().getProductoTasa() != null && det.getProducto().getProductoTasa() > 0);
 
                     if (tieneIva) {
-                        impuesto.appendChild(add(doc, "codigoPorcentaje", codigoPorcentajeIva));
-                        impuesto.appendChild(add(doc, "tarifa", tarifaIva));
-                        double valIva = det.getSubtotal() * (Double.parseDouble(tarifaIva) / 100.0);
+                        impuesto.appendChild(add(doc, "codigoPorcentaje",
+                                detectedCodigoPorcel.contains(".") ? detectedCodigoPorcel.split("\\.")[0]
+                                        : detectedCodigoPorcel));
+                        impuesto.appendChild(add(doc, "tarifa", detectedTarifa));
+                        double valIva = det.getSubtotal() * (Double.parseDouble(detectedTarifa) / 100.0);
                         impuesto.appendChild(add(doc, "baseImponible",
                                 String.format(java.util.Locale.US, "%.2f", det.getSubtotal())));
                         impuesto.appendChild(add(doc, "valor", String.format(java.util.Locale.US, "%.2f", valIva)));

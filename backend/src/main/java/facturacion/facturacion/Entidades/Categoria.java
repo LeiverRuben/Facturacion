@@ -26,6 +26,7 @@ public class Categoria {
     private Long categoriaId;
 
     @Column(name = "categoria_nombre")
+    @jakarta.validation.constraints.NotBlank(message = "El nombre de la categoría es obligatorio")
     private String categoriaNombre;
 
     @Column(name = "categoria_descripcion")

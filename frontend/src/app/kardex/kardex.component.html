@@ -1,0 +1,101 @@
+<div class="kardex-container slide-in-bottom">
+
+    <header class="page-header mb-4">
+        <h2 class="title" style="color: var(--primary-color);">Kardex / Movimientos de Inventario</h2>
+        <p class="subtitle text-muted">Historial detallado de entradas y salidas de productos.</p>
+    </header>
+
+    <!-- Filtros -->
+    <div class="card-premium p-4 mb-4 filter-section">
+        <h5 class="fw-bold mb-3 small text-uppercase text-muted">Filtros de Búsqueda</h5>
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Producto</label>
+                <div class="input-icon-wrapper">
+                    <i class='bx bxs-package'></i>
+                    <select class="form-control" [(ngModel)]="selectedProductoId" (change)="loadKardex()"
+                        style="padding-left: 2.8rem;">
+                        <option [ngValue]="0">Todos los productos</option>
+                        <option *ngFor="let p of productos" [ngValue]="p.productoId">
+                            {{ p.productoNombre }}
+                        </option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Fecha Desde</label>
+                <input type="date" class="form-control" [(ngModel)]="fechaInicio" (change)="loadKardex()">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Fecha Hasta</label>
+                <input type="date" class="form-control" [(ngModel)]="fechaFin" (change)="loadKardex()">
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button class="btn-action btn-secondary w-100 justify-content-center" (click)="limpiarFiltros()"
+                    title="Limpiar Filtros">
+                    <i class='bx bx-reset'></i>
+                </button>
+                <button class="btn-action btn-primary w-100 justify-content-center" (click)="sincronizar()"
+                    title="Sincronizar Inventario Antiguo">
+                    <i class='bx bx-sync'></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="card-premium p-0 overflow-hidden">
+        <div class="table-container">
+            <table class="table-modern">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Producto</th>
+                        <th>Tipo</th>
+                        <th>Detalle</th>
+                        <th class="text-center">Cant.</th>
+                        <th class="text-right">Costo Unit.</th>
+                        <th class="text-right">Total</th>
+                        <th class="text-right">Saldo (Stock)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let k of kardex">
+                        <td>
+                            <div class="d-flex flex-column">
+                                <span class="fw-bold">{{ k.fecha | date:'dd/MM/yyyy' }}</span>
+                                <small class="text-muted">{{ k.fecha | date:'HH:mm' }}</small>
+                            </div>
+                        </td>
+                        <td class="fw-bold text-dark">{{ k.producto?.productoNombre }}</td>
+                        <td>
+                            <span class="badge" [ngClass]="{
+                                    'badge-success': k.tipoMovimiento === 'ENTRADA' || k.tipoMovimiento === 'INGRESO', 
+                                    'badge-danger': k.tipoMovimiento === 'SALIDA' || k.tipoMovimiento === 'EGRESO'
+                                }">
+                                {{ k.tipoMovimiento }}
+                            </span>
+                        </td>
+                        <td class="small text-muted" style="max-width: 200px;">{{ k.detalle }}</td>
+                        <td class="text-center fw-bold"
+                            [ngClass]="{'text-success': k.tipoMovimiento === 'ENTRADA', 'text-danger': k.tipoMovimiento === 'SALIDA'}">
+                            {{ k.tipoMovimiento === 'SALIDA' ? '-' : '+' }}{{ k.cantidad }}
+                        </td>
+                        <td class="text-right">{{ k.costoUnitario | currency:'USD':'symbol':'1.2-4' }}</td>
+                        <td class="text-right fw-bold">{{ k.totalMovimiento | currency:'USD' }}</td>
+                        <td class="text-right">
+                            <span class="d-block fw-bold text-dark">{{ k.saldoCantidad }} unid.</span>
+                            <small class="text-muted">{{ k.saldoTotal | currency:'USD' }}</small>
+                        </td>
+                    </tr>
+                    <tr *ngIf="kardex.length === 0">
+                        <td colspan="8" class="text-center py-5">
+                            <i class='bx bx-history fs-1 text-muted mb-2'></i>
+                            <p class="text-muted">No hay movimientos registrados con los filtros actuales.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

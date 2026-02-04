@@ -1,0 +1,72 @@
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="page-title">Liquidaciones de Compra</h1>
+        <p class="page-subtitle">Gestión de comprobantes emitidos por adquisiciones a personas no obligadas</p>
+    </div>
+    <button class="btn-action btn-primary" routerLink="/liquidaciones/crear">
+        <i class="bx bx-plus"></i> Nueva Liquidación
+    </button>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Secuencial</th>
+                        <th>Fecha</th>
+                        <th>Proveedor</th>
+                        <th>Total</th>
+                        <th>Estado SRI</th>
+                        <th class="text-end pe-4">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let lc of liquidaciones">
+                        <td class="ps-4">
+                            <span class="fw-bold text-primary">{{ lc.secuencial }}</span>
+                        </td>
+                        <td>{{ lc.fechaEmision | date:'dd/MM/yyyy HH:mm' }}</td>
+                        <td>
+                            <div class="d-flex flex-column">
+                                <span class="fw-medium">{{ lc.proveedor.razonSocial }}</span>
+                                <small class="text-muted">{{ lc.proveedor.ruc }}</small>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="fw-bold">${{ lc.total | number:'1.2-2' }}</span>
+                        </td>
+                        <td>
+                            <span class="badge" [ngClass]="{
+                                'badge-success': lc.estadoSri === 'AUTORIZADO',
+                                'badge-warning': lc.estadoSri === 'PENDIENTE',
+                                'badge-danger': lc.estadoSri === 'RECHAZADO' || lc.estadoSri === 'DEVUELTA'
+                            }">
+                                {{ lc.estadoSri }}
+                            </span>
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="d-flex justify-content-end gap-2 align-items-center">
+                                <button class="btn-icon edit" (click)="enviarSri(lc.id)"
+                                    *ngIf="lc.estadoSri !== 'AUTORIZADO'" title="Enviar al SRI">
+                                    <i class="bx bx-send"></i>
+                                </button>
+                                <button class="btn-icon" style="color: #0891b2; background: #ecfeff;" title="Ver PDF"
+                                    (click)="descargarPdf(lc.id)">
+                                    <i class="bx bxs-file-pdf"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr *ngIf="liquidaciones.length === 0 && !loading">
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bx bx-box fs-1 d-block mb-3 opacity-25"></i>
+                            No existen liquidaciones de compra registradas.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

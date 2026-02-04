@@ -24,8 +24,9 @@ public class DetalleNotaCredito {
     private Double descuento;
     private Double subtotal;
 
-    // Referencia al producto original (opcional, pero recomendado)
-    // private Long productoId;
+    @ManyToOne
+    @JoinColumn(name = "producto_id")
+    private Producto producto;
 
     @ManyToOne
     @JoinColumn(name = "nota_credito_id", nullable = false)

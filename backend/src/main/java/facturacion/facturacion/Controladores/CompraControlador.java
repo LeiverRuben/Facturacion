@@ -22,7 +22,7 @@ public class CompraControlador {
     }
 
     @PostMapping
-    public ResponseEntity<Compra> crear(@RequestBody Compra compra) {
+    public ResponseEntity<Compra> crear(@RequestBody @jakarta.validation.Valid Compra compra) {
         return ResponseEntity.ok(compraServicio.guardarCompra(compra));
     }
 }

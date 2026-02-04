@@ -23,7 +23,7 @@ public class ProductoControlador {
     private ProductoServicio productoServicio;
 
     @PostMapping
-    public Producto guardar(@RequestBody Producto producto) {
+    public Producto guardar(@RequestBody @jakarta.validation.Valid Producto producto) {
         return productoServicio.guardar(producto);
     }
 
@@ -36,10 +36,11 @@ public class ProductoControlador {
     public Producto obtenerPorId(@PathVariable Long id) {
         return productoServicio.buscarId(id);
     }
+
     @PutMapping("/{id}")
-    public Producto actualizar(@PathVariable Long id, @RequestBody Producto producto) {
-    return productoServicio.actualizar(id, producto); 
-}
+    public Producto actualizar(@PathVariable Long id, @RequestBody @jakarta.validation.Valid Producto producto) {
+        return productoServicio.actualizar(id, producto);
+    }
 
     @DeleteMapping("/{id}")
     public void eliminar(@PathVariable Long id) {

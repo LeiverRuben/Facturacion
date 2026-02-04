@@ -25,13 +25,18 @@ public class Cliente {
     @Column(length = 200, nullable = false)
     private String clienteNombre;
     private String clienteDireccion;
+    @NotBlank(message = "El apellido no puede estar vacío")
     private String clienteApellido;
+
     private String clienteTelefono;
-    @Email(message = "el correo no es valido")
+
+    @Email(message = "El correo no es válido")
+    @NotBlank(message = "El email es obligatorio")
     private String clienteEmail;
 
     private Boolean clienteEstado;
 
     @Column(length = 13)
+    @NotBlank(message = "La identificación es obligatoria")
     private String identificacion;
 }

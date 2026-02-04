@@ -12,6 +12,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -38,8 +41,10 @@ public class DestinatarioGuia {
 
     @ManyToOne
     @JoinColumn(name = "guia_remision_id", nullable = false)
+    @JsonBackReference
     private GuiaDeRemision guiaDeRemision;
 
     @OneToMany(mappedBy = "destinatario", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
     private List<DetalleGuia> detalles;
 }

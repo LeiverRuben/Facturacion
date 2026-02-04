@@ -13,13 +13,21 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Usuario {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @jakarta.validation.constraints.NotBlank(message = "El nombre es obligatorio")
     private String nombre;
+
+    @jakarta.validation.constraints.Email(message = "Correo inválido")
+    @jakarta.validation.constraints.NotBlank(message = "El correo es obligatorio")
     private String correo;
+
+    @jakarta.validation.constraints.NotBlank(message = "La contraseña es obligatoria")
     private String password;
+
+    @jakarta.validation.constraints.NotBlank(message = "El username es obligatorio")
     private String username;
     private String estaActivo;
 

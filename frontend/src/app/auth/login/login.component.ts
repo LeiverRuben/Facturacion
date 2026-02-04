@@ -3,13 +3,14 @@ import { AuthService } from '../auth.service';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-login',
-   standalone: true,               
+  standalone: true,
   imports: [
     CommonModule,
-    FormsModule,                  
+    FormsModule,
     RouterModule
   ],
   templateUrl: './login.component.html',
@@ -22,7 +23,7 @@ export class LoginComponent {
   constructor(
     private authService: AuthService,
     private router: Router
-  ) {}
+  ) { }
 
   onLogin(): void {
     this.authService.login(this.username, this.password).subscribe({
@@ -30,7 +31,7 @@ export class LoginComponent {
         this.router.navigate(['/dashboard']);
       },
       error: () => {
-        alert('Usuario o contraseña incorrectos');
+        Swal.fire('Error', 'Usuario o contraseña incorrectos', 'error');
       }
     });
   }

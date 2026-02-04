@@ -53,8 +53,8 @@
                             </td>
                             <td class="text-right fw-bold">{{ c.total | currency:'USD' }}</td>
                             <td class="text-center">
-                                <button class="btn-sm btn-outline-secondary" (click)="abrirModalRetencion(c)"
-                                    title="Generar Retención">
+                                <button class="btn-action btn-secondary" (click)="abrirModalRetencion(c)"
+                                    title="Generar Retención" style="font-size: 0.85rem; padding: 0.4rem 0.8rem;">
                                     <i class='bx bx-receipt'></i> Retención
                                 </button>
                             </td>
@@ -177,9 +177,11 @@
                             <td class="text-right">{{ item.costoUnitario | currency:'USD' }}</td>
                             <td class="text-right fw-bold">{{ item.subtotal | currency:'USD' }}</td>
                             <td class="text-center">
-                                <button class="btn-icon text-danger" (click)="eliminarDetalle(i)">
-                                    <i class='bx bx-trash'></i>
-                                </button>
+                                <div class="btn-icon-wrapper" style="justify-content: center;">
+                                    <button class="btn-icon delete" (click)="eliminarDetalle(i)">
+                                        <i class='bx bx-trash-alt'></i>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                         <tr *ngIf="detalles.length === 0">
